@@ -1,12 +1,14 @@
 const router = require("express").Router();
 const Trips = require('../../models/Trips/TripsSchema');
+const validateRequest = require('../../middlewares/validateRequest');
+const tripValidationSchema = require('../../JoiSchema/TripsJoiSchema');
 
 
 ////////////////////////////////////////////////////---CREATE-TRIPS---//////////////////////////////////////////////////////////////////////////
  
 
 // CREATE Trips API
-router.post("/trips-posting-values", async (req, res) => {
+router.post("/trips-posting-values", validateRequest(tripValidationSchema), async (req, res) => {
     const { 
       tripPassanger,
       scheduledDate,

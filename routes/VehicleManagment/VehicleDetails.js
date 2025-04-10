@@ -61,8 +61,6 @@ router.post("/vehicle-details-post-request/:id",async (req, res) => {
 );
 
 
-
-
 //////////////////////////////////////////////////////////---GET-ALL-DRIVER---///////////////////////////////////////////////////////////////////
   //ye whi kam hai jb katny ky bad yya pakry jany ky bad krty hain 
  

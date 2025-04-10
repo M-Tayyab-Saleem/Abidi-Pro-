@@ -13,4 +13,3 @@ router.get("/vehicle-availability-get-values" , async (req , res) => {
 
 
 module.exports = router;
-S

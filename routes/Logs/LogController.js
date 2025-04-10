@@ -4,6 +4,8 @@ const express = require('express');
 const router = express.Router();
 const Log = require('../../models/Logs/LogSchema');  // Import the Log model for saving logs
 const { info, warn, error, debug } = require('../../utils/logger');  // Import logging utility for logging to console/file
+const validateRequest = require("../../middlewares/validateRequest");
+const logValidationSchema = require("../../JoiSchema/LogJoiSchema");  // Import the log validation schema
 
 // Helper function to save log entry to the database and log it to console/file
 const saveLog = async (level, message) => {
@@ -41,7 +43,7 @@ const saveLog = async (level, message) => {
 };
 
 // Route to create a log entry manually
-router.post('/log', async (req, res) => {
+router.post('/log',validateRequest(logValidationSchema), async (req, res) => {
   const { level, message } = req.body;
 
   if (!level || !message) {

@@ -6,7 +6,7 @@ const passengerSchema = new mongoose.Schema({
         required: true,
     },
     passengerContact: {
-        type: Number,
+        type: String,
         required: true,
         unique: true
     },

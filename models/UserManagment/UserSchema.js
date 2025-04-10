@@ -1,46 +1,40 @@
-// Importing the mongoose library to define the schema and interact with MongoDB
 const mongoose = require("mongoose");
 
-// Define the schema for the "User" model
-const userSchema = new mongoose.Schema({
-    // Define the "email" field with type String, required, and unique constraint
+const userSchema = new mongoose.Schema(
+  {
     email: {
-        type: String,
-        required: true, // Ensures that the email is provided when creating a user
-        unique: true,   // Ensures that the email is unique across the users in the database
+      type: String,
+      required: true,
+      unique: true,
     },
-
-    // Define the "username" field with type String and unique constraint
     name: {
-        type: String,
+      type: String,
     },
-
-    // Define the "password" field with type String and required constraint
     password: {
-        type: String,
-        required: true, // Ensures that the password is provided when creating a user
+      type: String,
+      required: true,
     },
-    role : {
-        type : String,
+    role: {
+      type: String,
     },
     otp: {
-         type: String
-         }, // Store OTP
-    
+      type: String,
+    },
+
     otpExpires: {
-         type: Date 
-        }, // Expiry time for OTP
+      type: Date,
+    },
     customId: {
-            type: String,
-        },
-    contact : {
-        type : String,
+      type: String,
     },
-    assignedTrip : {
-        type: String,
+    contact: {
+      type: String,
     },
+    assignedTrip: {
+      type: String,
+    },
+  },
+  { timestamps: true }
+);
 
-}, { timestamps: true });
-
-// Create and export the User model using the defined userSchema
 module.exports = mongoose.model("RideUser", userSchema);

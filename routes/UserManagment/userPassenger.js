@@ -1,7 +1,10 @@
 const router = require("express").Router();
 const Passenger = require('../../models/UserManagment/PassengerSchema'); 
+const validateRequest = require("../../middlewares/validateRequest");
+const PassengerValidationSchema = require("../../JoiSchema/PassengerJoiSchema");
 
-router.post("/createPassenger",async (req, res) => {
+
+router.post("/createPassenger", validateRequest(PassengerValidationSchema) ,async (req, res) => {
   const { 
     passengerName, 
     passengerContact, 

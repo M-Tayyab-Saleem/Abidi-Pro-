@@ -10,6 +10,11 @@ const transporter = nodemailer.createTransport({
     pass: "tsdo zpys wyoc lykh",
   },
 });
+const validateRequest = require("../../middlewares/validateRequest");
+const {
+  userSchema,
+  userUpdateSchema
+} = require("../../JoiSchema/UserJoiSchema");
 
 // Regular expression for password validation
 const validatePassword = (password) => {
@@ -34,48 +39,54 @@ const validatePassword = (password) => {
   return { valid: true };
 };
 
-router.post("/createuser", async (req, res) => {
-  try {
-    const { email, name, password, role } = req.body;
-    // Validate the password
-    const { valid, message } = validatePassword(password);
-    if (!valid) {
-      return res.status(400).json({ message });
+// Create user route
+router.post(
+  "/createuser",
+  validateRequest(userSchema),
+  async (req, res) => {
+    try {
+      const { email, name, password, role } = req.body;
+      // Validate the password
+      const { valid, message } = validatePassword(password);
+      if (!valid) {
+        return res.status(400).json({ message });
+      }
+      const hashpassword = bcrypt.hashSync(password);
+      const userExists = await User.findOne({ email });
+      if (userExists) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+      let prefix = "";
+      if (role === "Admin") {
+        prefix = "RideAD";
+      } else if (role === "Accountant") {
+        prefix = "RideAC";
+      } else if (role === "Dispatcher") {
+        prefix = "RideD";
+      }
+      let customId = "";
+      if (prefix) {
+        const count = await User.countDocuments({ role });
+        const nextNumber = count + 1;
+        const paddedNumber = String(nextNumber).padStart(3, "0");
+        customId = prefix + paddedNumber;
+      }
+      const user = new User({
+        name,
+        email,
+        password: hashpassword,
+        role,
+        customId,
+      });
+      await user.save();
+      res.status(200).json({ user });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
     }
-    const hashpassword = bcrypt.hashSync(password);
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-    let prefix = "";
-    if (role === "Admin") {
-      prefix = "RideAD";
-    } else if (role === "Accountant") {
-      prefix = "RideAC";
-    } else if (role === "Dispatcher") {
-      prefix = "RideD";
-    }
-    let customId = "";
-    if (prefix) {
-      const count = await User.countDocuments({ role });
-      const nextNumber = count + 1;
-      const paddedNumber = String(nextNumber).padStart(3, "0");
-      customId = prefix + paddedNumber;
-    }
-    const user = new User({
-      name,
-      email,
-      password: hashpassword,
-      role,
-      customId,
-    });
-    await user.save();
-    res.status(200).json({ user });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
   }
-});
+);
 
+// Get all users route
 router.get("/createuser", async (req, res) => {
   try {
     const users = await User.find({}).sort({ createdAt: -1 });
@@ -101,6 +112,8 @@ router.get("/createuser/:id", async (req, res) => {
       .json({ error: "Error retrieving user", details: error.message });
   }
 });
+
+
 
 router.put("/createuser/:id", async (req, res) => {
   const { id } = req.params;
@@ -179,7 +192,7 @@ router.post("/signin", async (req, res) => {
     // Generate OTP
     const currentTime = new Date();
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000); // OTP expires in 1 minute
+    const otpExpires = new Date(currentTime.getTime() + 5 * 60 * 1000); // OTP expires in 5 minute
     user.otp = otp;
     user.otpGeneratedAt = currentTime;
     user.otpExpires = otpExpires;
@@ -195,9 +208,9 @@ router.post("/signin", async (req, res) => {
     info(`OTP successfully generated for ${email}. Sending OTP...`);
 
     const mailOptions = {
-      from: 'no-reply@yourdomain.com', // Your email
+      from: "no-reply@yourdomain.com", // Your email
       to: user.email,
-      subject: 'Your OTP for Via Ride',
+      subject: "Your OTP for Via Ride",
       html: `
         <html>
           <head>
@@ -278,9 +291,8 @@ router.post("/signin", async (req, res) => {
             </div>
           </body>
         </html>
-      `
+      `,
     };
-    
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -460,7 +472,7 @@ router.post("/resend-otp", async (req, res) => {
             </div>
           </body>
         </html>
-      `
+      `,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {

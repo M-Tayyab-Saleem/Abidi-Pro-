@@ -1,10 +1,7 @@
 const router = require("express").Router();
 const Driver = require('../../models/UserManagment/DriverSchema'); // rename import
 
- 
 
- 
- 
 // GET ALL DRIVER API
 router.get("/allDriver", async (req, res) => {
     try {
