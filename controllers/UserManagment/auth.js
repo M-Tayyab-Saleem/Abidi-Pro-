@@ -1,4 +1,3 @@
-const router = require("express").Router();
 const User = require("../../models/UserManagment/UserSchema");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
@@ -10,11 +9,6 @@ const transporter = nodemailer.createTransport({
     pass: "tsdo zpys wyoc lykh",
   },
 });
-const validateRequest = require("../../middlewares/validateRequest");
-const {
-  userSchema,
-  userUpdateSchema
-} = require("../../JoiSchema/UserJoiSchema");
 
 // Regular expression for password validation
 const validatePassword = (password) => {
@@ -39,55 +33,52 @@ const validatePassword = (password) => {
   return { valid: true };
 };
 
-// Create user route
-router.post(
-  "/createuser",
-  validateRequest(userSchema),
-  async (req, res) => {
-    try {
-      const { email, name, password, role } = req.body;
-      // Validate the password
-      const { valid, message } = validatePassword(password);
-      if (!valid) {
-        return res.status(400).json({ message });
-      }
-      const hashpassword = bcrypt.hashSync(password);
-      const userExists = await User.findOne({ email });
-      if (userExists) {
-        return res.status(400).json({ message: "User already exists" });
-      }
-      let prefix = "";
-      if (role === "Admin") {
-        prefix = "RideAD";
-      } else if (role === "Accountant") {
-        prefix = "RideAC";
-      } else if (role === "Dispatcher") {
-        prefix = "RideD";
-      }
-      let customId = "";
-      if (prefix) {
-        const count = await User.countDocuments({ role });
-        const nextNumber = count + 1;
-        const paddedNumber = String(nextNumber).padStart(3, "0");
-        customId = prefix + paddedNumber;
-      }
-      const user = new User({
-        name,
-        email,
-        password: hashpassword,
-        role,
-        customId,
-      });
-      await user.save();
-      res.status(200).json({ user });
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  }
-);
 
-// Get all users route
-router.get("/createuser", async (req, res) => {
+//Create a new user
+const createUser =  async (req, res) => {
+  try {
+    const { email, name, password, role } = req.body;
+    // Validate the password
+    const { valid, message } = validatePassword(password);
+    if (!valid) {
+      return res.status(400).json({ message });
+    }
+    const hashpassword = bcrypt.hashSync(password);
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+    let prefix = "";
+    if (role === "Admin") {
+      prefix = "RideAD";
+    } else if (role === "Accountant") {
+      prefix = "RideAC";
+    } else if (role === "Dispatcher") {
+      prefix = "RideD";
+    }
+    let customId = "";
+    if (prefix) {
+      const count = await User.countDocuments({ role });
+      const nextNumber = count + 1;
+      const paddedNumber = String(nextNumber).padStart(3, "0");
+      customId = prefix + paddedNumber;
+    }
+    const user = new User({
+      name,
+      email,
+      password: hashpassword,
+      role,
+      customId,
+    });
+    await user.save();
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Get all users
+const getAllUsers =  async (req, res) => {
   try {
     const users = await User.find({}).sort({ createdAt: -1 });
     res.status(200).json(users);
@@ -96,9 +87,10 @@ router.get("/createuser", async (req, res) => {
       .status(500)
       .json({ error: "Error retrieving users", details: error.message });
   }
-});
+};
 
-router.get("/createuser/:id", async (req, res) => {
+//get Specific user by ID
+const getUserById = async (req, res) => {
   const { id } = req.params;
   try {
     const user = await User.findById(id);
@@ -111,11 +103,10 @@ router.get("/createuser/:id", async (req, res) => {
       .status(500)
       .json({ error: "Error retrieving user", details: error.message });
   }
-});
+};
 
-
-
-router.put("/createuser/:id", async (req, res) => {
+// Update user 
+const updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, email, role } = req.body;
   try {
@@ -139,9 +130,10 @@ router.put("/createuser/:id", async (req, res) => {
       .status(500)
       .json({ error: "Error updating user", details: error.message });
   }
-});
+};
 
-router.delete("/createuser/:id", async (req, res) => {
+// Delete user
+const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
     console.log(`Trying to delete user with id: ${id}`);
@@ -158,10 +150,11 @@ router.delete("/createuser/:id", async (req, res) => {
       .status(500)
       .json({ error: "Error deleting user", details: error.message });
   }
-});
+};
+
 
 // Signin route
-router.post("/signin", async (req, res) => {
+const signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -192,7 +185,7 @@ router.post("/signin", async (req, res) => {
     // Generate OTP
     const currentTime = new Date();
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const otpExpires = new Date(currentTime.getTime() + 5 * 60 * 1000); // OTP expires in 5 minute
+    const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000); // OTP expires in 1 minute
     user.otp = otp;
     user.otpGeneratedAt = currentTime;
     user.otpExpires = otpExpires;
@@ -208,9 +201,9 @@ router.post("/signin", async (req, res) => {
     info(`OTP successfully generated for ${email}. Sending OTP...`);
 
     const mailOptions = {
-      from: "no-reply@yourdomain.com", // Your email
+      from: 'no-reply@yourdomain.com', // Your email
       to: user.email,
-      subject: "Your OTP for Via Ride",
+      subject: 'Your OTP for Via Ride',
       html: `
         <html>
           <head>
@@ -291,8 +284,9 @@ router.post("/signin", async (req, res) => {
             </div>
           </body>
         </html>
-      `,
+      `
     };
+    
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -317,10 +311,10 @@ router.post("/signin", async (req, res) => {
     error(`Signin error: ${error.message}`);
     res.status(500).json({ message: "Server Error" });
   }
-});
+};
 
 // Verify OTP route
-router.post("/verify-otp", async (req, res) => {
+const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
@@ -361,10 +355,10 @@ router.post("/verify-otp", async (req, res) => {
     );
     res.status(500).json({ message: "Server Error" });
   }
-});
+};
 
 // Resend OTP route
-router.post("/resend-otp", async (req, res) => {
+const resendOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -472,7 +466,7 @@ router.post("/resend-otp", async (req, res) => {
             </div>
           </body>
         </html>
-      `,
+      `
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -489,6 +483,15 @@ router.post("/resend-otp", async (req, res) => {
     error(`Error resending OTP for ${email}: ${error.message}`);
     res.status(500).json({ message: "Server Error" });
   }
-});
+};
 
-module.exports = router;
+module.exports = {
+  createUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  signIn,
+  verifyOtp,
+  resendOtp,
+};
