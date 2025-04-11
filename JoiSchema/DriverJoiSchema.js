@@ -169,5 +169,3 @@ module.exports = {
   driverValidationSchema,
   driverUpdateSchema
 };
-
-module.exports = driverValidationSchema;

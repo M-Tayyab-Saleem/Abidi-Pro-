@@ -72,5 +72,3 @@ module.exports = {
   userSchema,
   userUpdateSchema
 };
-
-module.exports = userSchema;

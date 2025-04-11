@@ -81,8 +81,22 @@ const {
   resendOtp,
 } = require("../controllers/UserManagment/auth");
 
-/////////////////////////////////////////////----ALL FILE ROUTES----////////////////////////////////////////////////
 
+///////////////////////////////////////////---Schema Validation----////////////////////////////////////////////////////
+
+const { driverValidationSchema, driverUpdateSchema} = require("../JoiSchema/DriverJoiSchema");
+const  logValidationSchema  = require("../JoiSchema/LogJoiSchema");
+const { passengerSchema, passengerUpdateSchema } = require("../JoiSchema/PassengerJoiSchema");
+const tripValidationSchema  = require("../JoiSchema/TripsJoiSchema");
+const { userSchema, userUpdateSchema } = require("../JoiSchema/UserJoiSchema");
+
+///////////////////////////////////////////---Middlewares----////////////////////////////////////////////////////
+
+const validateRequest = require("../middlewares/validateRequest");
+
+/////////////////////////////////////////////----ALL FILE ROUTES----////////////////////////////////////////////
+
+// Driver Routes
 router.get("/allDriver", getAllDrivers);
 router.get("/allDriver/:id", getDriverById);
 
@@ -90,42 +104,49 @@ router.post("/driverRequest/:id", createOrUpdateDriver);
 router.get("/driverRequest", getAllDriverRequests);
 router.get("/driverRequest/:id", getDriverRequestById);
 
-router.post("/log", createLog);
-router.post("/info", createInfoLog);
-router.post("/error", createErrorLog);
+router.post("/driver-posting-entry", validateRequest(driverValidationSchema), createDriver);
+router.get("/driver-getting-values", getAllUserDrivers);
+router.get("/driver-getting-values/:id", getUserDriverById);
+router.put("/driver-putting-values/:id",validateRequest(driverUpdateSchema), updateDriverById);
+router.delete("/driver-deleting-values/:id", deleteDriverById);
+router.post("/driver-posting-form/:id", updateDeclineOrResubmit);
+router.get("/driver-requestion-form", getAllDrivers);
+router.get("/driver-requestion-form/:id", getDriverById);
+
+// Log Routes
+router.post("/log", validateRequest(logValidationSchema),createLog);
+router.post("/info",validateRequest(logValidationSchema), createInfoLog);
+router.post("/error",validateRequest(logValidationSchema), createErrorLog);
 router.get("/logs", getAllLogs);
 
-router.post("/trips-posting-values", post);
+// Trip Routes
+router.post("/trips-posting-values",validateRequest(tripValidationSchema), post);
 router.get("/trips-getting-values", get);
 router.get("/trips-getting-values/:id", getById);
 
+//Accountant Routes
 router.post("/accountant", postAccountant);
 router.get("/accountant", getAccountant);
 router.get("/accountant/:id", getAccountantById);
 router.put("/accountant/:id", updateAccountant);
 router.delete("/accountant/:id", removeAccountant);
 
+//Dispatcher Routes
 router.post("/dispatcher", createDispatcher);
 router.get("/dispatcher", getAllDispatchers);
 router.get("/dispatcher/:id", getDispatcherById);
 router.put("/dispatcher/:id", updateDispatcher);
 router.delete("/dispatcher/:id", deleteDispatcher);
 
-router.post("/driver-posting-entry", createDriver);
-router.get("/driver-getting-values", getAllUserDrivers);
-router.get("/driver-getting-values/:id", getUserDriverById);
-router.put("/driver-putting-values/:id", updateDriverById);
-router.delete("/driver-deleting-values/:id", deleteDriverById);
-router.post("/driver-posting-form/:id", updateDeclineOrResubmit);
-router.get("/driver-requestion-form", getAllDrivers);
-router.get("/driver-requestion-form/:id", getDriverById);
 
-router.post("/createPassenger", createPassenger);
+//Passenger Routes
+router.post("/createPassenger",validateRequest(passengerSchema), createPassenger);
 router.get("/createPassenger", getAllPassengers);
 router.get("/createPassenger/:id", getPassengerById);
-router.put("/createPassenger/:id", updatePassenger);
+router.put("/createPassenger/:id",validateRequest(passengerUpdateSchema), updatePassenger);
 router.delete("/createPassenger/:id", deletePassenger);
 
+//Vehicle Routes
 router.get("/vehicle-get-values", getAllVehicles);
 router.get("/vehicle-get-values/:id", getVehicleById);
 router.put("/vehicle-put-values/:id", updateVehicle);
@@ -137,10 +158,11 @@ router.get("/vehicle-details-get-values", getAllVehiclesDetails);
 router.get("/vehicle-details-get-values/:id", getVehicleDetailsById);
 router.post("/vehicle-details-post-request/:id", postDeclineOrResubmitVehicle);
 
-router.post("/createuser", createUser);
+//Auth Routes
+router.post("/createuser", validateRequest(userSchema), createUser);
 router.get("/createuser", getAllUsers);
 router.get("/createuser/:id", getUserById);
-router.put("/createuser/:id", updateUser);
+router.put("/createuser/:id",validateRequest(userUpdateSchema), updateUser);
 router.delete("/createuser/:id", deleteUser);
 router.post("/signin", signIn);
 router.post("/verify-otp", verifyOtp);
