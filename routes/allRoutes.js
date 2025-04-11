@@ -15,6 +15,8 @@ const {
   createLog,
   createInfoLog,
   createErrorLog,
+  createDebugLog,
+  createWarnLog,
   getAllLogs,
 } = require("../controllers/Logs/LogController");
 
@@ -107,7 +109,7 @@ router.get("/driverRequest/:id", getDriverRequestById);
 router.post("/driver-posting-entry", validateRequest(driverValidationSchema), createDriver);
 router.get("/driver-getting-values", getAllUserDrivers);
 router.get("/driver-getting-values/:id", getUserDriverById);
-router.put("/driver-putting-values/:id",validateRequest(driverUpdateSchema), updateDriverById);
+router.put("/driver-putting-values/:id", validateRequest(driverUpdateSchema), updateDriverById);
 router.delete("/driver-deleting-values/:id", deleteDriverById);
 router.post("/driver-posting-form/:id", updateDeclineOrResubmit);
 router.get("/driver-requestion-form", getAllDrivers);
@@ -117,6 +119,8 @@ router.get("/driver-requestion-form/:id", getDriverById);
 router.post("/log", validateRequest(logValidationSchema),createLog);
 router.post("/info",validateRequest(logValidationSchema), createInfoLog);
 router.post("/error",validateRequest(logValidationSchema), createErrorLog);
+router.post("/warn",validateRequest(logValidationSchema), createWarnLog);
+router.post("/debug",validateRequest(logValidationSchema), createDebugLog);
 router.get("/logs", getAllLogs);
 
 // Trip Routes

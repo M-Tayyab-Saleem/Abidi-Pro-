@@ -119,9 +119,51 @@ const getAllLogs = async (req, res) => {
   }
 };
 
+// Create warn log
+const createWarnLog = async (req, res) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ message: "Message is required" });
+  }
+
+  try {
+    await saveLog("warn", message);
+    res.status(200).json({ message: "warn log created" });
+  } catch (err) {
+    error(`error while creating warn log: ${err.message}`);
+    res
+      .status(500)
+      .json({ message: "Failed to create warn log", error: err.message });
+  }
+};
+
+// Create debug log
+const createDebugLog = async (req, res) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ message: "Message is required" });
+  }
+
+  try {
+    await saveLog("debug", message);
+    res.status(200).json({ message: "debug log created" });
+  } catch (err) {
+    error(`error while creating debug log: ${err.message}`);
+    res
+      .status(500)
+      .json({ message: "Failed to create debug log", error: err.message });
+  }
+};
+
+
+
 module.exports = {
   createLog,
   createInfoLog,
   createErrorLog,
   getAllLogs,
+  createWarnLog,
+  createDebugLog,
 };

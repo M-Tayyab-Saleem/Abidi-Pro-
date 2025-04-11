@@ -1,12 +1,15 @@
+require('dotenv').config();
+
 const express = require("express");
 const dotenv = require('dotenv');
 const cors = require("cors");
 require("./conn/conn");
 const app = express();
+const ExpressError = require("./utils/ExpressError");
 
 // Import the cron job from utils
 require("./utils/cronScheduler");  // This will execute the cron job when server starts
-
+const PORT = process.env.PORT || 1000;
 
 
 const allRoutes = require("./routes/allRoutes");
@@ -22,7 +25,20 @@ app.get('/', (req, res) => {
 app.use("/api/viaRide", allRoutes);
 
 
-const PORT = process.env.PORT || 1000;
+app.all("*", (req, res, next) => {
+  err = new ExpressError(404, "Page not Found");
+  next(err);
+});
+
+app.use((err, req, res, next) => {
+  let { status = 500, message = "Some error occured" } = err;
+  res.status(status).json({
+    status,
+    message,
+  });
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
