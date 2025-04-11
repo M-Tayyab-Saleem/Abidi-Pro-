@@ -49,11 +49,11 @@ const createUser =  async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
     let prefix = "";
-    if (role === "Admin") {
+    if (role === "Admin" || role === "admin") {
       prefix = "RideAD";
-    } else if (role === "Accountant") {
+    } else if (role === "Accountant" || role === "accountant") {
       prefix = "RideAC";
-    } else if (role === "Dispatcher") {
+    } else if (role === "Dispatcher" || role === "dispatcher") {
       prefix = "RideD";
     }
     let customId = "";
@@ -63,11 +63,12 @@ const createUser =  async (req, res) => {
       const paddedNumber = String(nextNumber).padStart(3, "0");
       customId = prefix + paddedNumber;
     }
+    const userRole = role.toLowerCase();
     const user = new User({
       name,
       email,
       password: hashpassword,
-      role,
+      role: userRole,
       customId,
     });
     await user.save();

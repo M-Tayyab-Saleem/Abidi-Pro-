@@ -1,28 +1,31 @@
 const Accountant = require("../../models/UserManagment/UserSchema");
 
-// POST: Create Accountant
-const postAccountant = async (req, res) => {
-  try {
-    const { name, email, contact, role, customId, accessLevel } = req.body;
-    const accountant = new Accountant({
-      name,
-      email,
-      contact,
-      role,
-      customId,
-      accessLevel,
-    });
-    await accountant.save();
-    res.status(200).json({ accountant });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// // POST: Create Accountant
+// const postAccountant = async (req, res) => {
+//   try {
+//     const { name, email, contact, role, customId, accessLevel } = req.body;
+//     const accountant = new Accountant({
+//       name,
+//       email,
+//       contact,
+//       role,
+//       customId,
+//       accessLevel,
+//     });
+//     await accountant.save();
+//     res.status(200).json({ accountant });
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// };
 
 // GET: All Accountants
 const getAccountant = async (req, res) => {
   try {
-    const accountant = await Accountant.find({ role: "Accountant" }).sort({
+    const accountant = await Accountant.find({  $or: [
+      { role: "accountant" },
+      { role: "Accountant" }
+    ]}).sort({
       createdAt: -1,
     });
     res.status(200).json(accountant);
@@ -90,7 +93,6 @@ const removeAccountant = async (req, res) => {
 };
 
 module.exports = {
-  postAccountant,
   getAccountant,
   getAccountantById,
   updateAccountant,

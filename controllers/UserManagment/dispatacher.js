@@ -1,26 +1,29 @@
 const Dispatcher = require("../../models/UserManagment/UserSchema");
 
-const createDispatcher = async (req, res) => {
-  try {
-    const { name, email, contact, role, customId, assignedTrip } = req.body;
-    const dispatcher = new Dispatcher({
-      name,
-      email,
-      contact,
-      role,
-      customId,
-      assignedTrip,
-    });
-    await dispatcher.save();
-    res.status(200).json({ dispatcher });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// const createDispatcher = async (req, res) => {
+//   try {
+//     const { name, email, contact, role, customId, assignedTrip } = req.body;
+//     const dispatcher = new Dispatcher({
+//       name,
+//       email,
+//       contact,
+//       role,
+//       customId,
+//       assignedTrip,
+//     });
+//     await dispatcher.save();
+//     res.status(200).json({ dispatcher });
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// };
 
 const getAllDispatchers = async (req, res) => {
   try {
-    const dispatchers = await Dispatcher.find({ role: "Dispatcher" }).sort({
+    const dispatchers = await Dispatcher.find({  $or: [
+      { role: "dispatcher" },
+      { role: "Dispatcher" }
+    ]}).sort({
       createdAt: -1,
     });
     res.status(200).json(dispatchers);
@@ -81,7 +84,6 @@ const deleteDispatcher = async (req, res) => {
 };
 
 module.exports = {
-  createDispatcher,
   getAllDispatchers,
   getDispatcherById,
   updateDispatcher,

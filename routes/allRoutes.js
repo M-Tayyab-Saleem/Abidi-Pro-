@@ -129,17 +129,15 @@ router.get("/trips-getting-values", get);
 router.get("/trips-getting-values/:id", getById);
 
 //Accountant Routes
-router.post("/accountant", postAccountant);
 router.get("/accountant", getAccountant);
 router.get("/accountant/:id", getAccountantById);
-router.put("/accountant/:id", updateAccountant);
+router.put("/accountant/:id",validateRequest(userUpdateSchema), updateAccountant);
 router.delete("/accountant/:id", removeAccountant);
 
 //Dispatcher Routes
-router.post("/dispatcher", createDispatcher);
 router.get("/dispatcher", getAllDispatchers);
 router.get("/dispatcher/:id", getDispatcherById);
-router.put("/dispatcher/:id", updateDispatcher);
+router.put("/dispatcher/:id",validateRequest(userUpdateSchema), updateDispatcher);
 router.delete("/dispatcher/:id", deleteDispatcher);
 
 
