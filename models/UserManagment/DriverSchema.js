@@ -2,29 +2,31 @@ const mongoose = require('mongoose');
 
 const DriverSchema = new mongoose.Schema({
     driverID: {
-        type: String,
+        type: String
     },
     driverName: {
         type: String,
+        required: true
     },
     driverContact: {
         type: String,
-        unique: true
+        unique: true,
+        required: true
     },
     driverEarning: {
         type: String
     },
     driverJoiningDate: {
-        type: String,
+        type: String
     },
     driverAge: {
-        type: String,
+        type: String
     },
     driverGender: {
         type: String
     },
     driverRating: {
-        type: String,
+        type: String
     },
     driverCnic: {
         type: String,
@@ -41,82 +43,171 @@ const DriverSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
-    driverAssignedVehicle: {
-        type: String,
-    },
     driverCity: {
-        type: String,
+        type: String
     },
     driverBankName: {
-        type: String,
+        type: String
     },
     driverIban: {
         type: String,
         unique: true
     },    
     driverBirthDate: {
-        type: String,
+        type: String
     },
-    
-    lastseen : {
-        type: String,
+    lastseen: {
+        type: String
     },
-    /////////////////////////////////////Decline Reason/////////////////////////////////////
-
     driverDeclineReason: {
-        type: String,
+        type: String
     },
     driverReSubmit: {
+        type: String
+    },
+    assignedVehicle: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vehicle',
+        default: null
+    },
+    status: {
         type: String,
-    },
-
-    
-    vehicleDeclineReason: {
-        type: String,
-    },
-    vehicleReSubmit: {
-        type: String,
-    },
-    // Vehicle Data 
-    make : {
-        type : String,
-    },
-    carType : {
-        type : String,
-    },
-    color : {
-        type : String,
-    },
-    year : {
-        type : String,
-    },
-    owner : {
-        type : String,
-    },
-    licensePlateNo: {
-        type: String,
-        unique : true
-    },
-    feul : {
-        type : String,
-    },
-   seat : {
-        type : String,
-    },
-    transmission : {
-        type : String
-    },
-    // registrationBook : {
-    //     type : PNG,
-    //     required : true,
-    // },
-    // insuarance : {
-    //     type : PNG
-    // },
-
+        enum: ['active', 'inactive', 'pending', 'rejected'],
+        default: 'pending'
+    }
 }, { timestamps: true });
  
-module.exports = mongoose.model('RideDriverVehicles', DriverSchema);
+module.exports = mongoose.model('RideDrivers', DriverSchema);
+
+
+
+
+
+
+
+
+
+
+
+// const mongoose = require('mongoose');
+
+// const DriverSchema = new mongoose.Schema({
+//     driverID: {
+//         type: String,
+//     },
+//     driverName: {
+//         type: String,
+//     },
+//     driverContact: {
+//         type: String,
+//         unique: true
+//     },
+//     driverEarning: {
+//         type: String
+//     },
+//     driverJoiningDate: {
+//         type: String,
+//     },
+//     driverAge: {
+//         type: String,
+//     },
+//     driverGender: {
+//         type: String
+//     },
+//     driverRating: {
+//         type: String,
+//     },
+//     driverCnic: {
+//         type: String,
+//         unique: true
+//     },
+//     driverCardNumber: {
+//         type: String,
+//         unique: true
+//     },
+//     driverTotalTrips: {
+//         type: String
+//     },
+//     driverEmail: {
+//         type: String,
+//         unique: true
+//     },
+//     driverAssignedVehicle: {
+//         type: String,
+//     },
+//     driverCity: {
+//         type: String,
+//     },
+//     driverBankName: {
+//         type: String,
+//     },
+//     driverIban: {
+//         type: String,
+//         unique: true
+//     },    
+//     driverBirthDate: {
+//         type: String,
+//     },
+    
+//     lastseen : {
+//         type: String,
+//     },
+//     /////////////////////////////////////Decline Reason/////////////////////////////////////
+
+//     driverDeclineReason: {
+//         type: String,
+//     },
+//     driverReSubmit: {
+//         type: String,
+//     },
+
+    
+//     vehicleDeclineReason: {
+//         type: String,
+//     },
+//     vehicleReSubmit: {
+//         type: String,
+//     },
+//     // Vehicle Data 
+//     make : {
+//         type : String,
+//     },
+//     carType : {
+//         type : String,
+//     },
+//     color : {
+//         type : String,
+//     },
+//     year : {
+//         type : String,
+//     },
+//     owner : {
+//         type : String,
+//     },
+//     licensePlateNo: {
+//         type: String,
+//         unique : true
+//     },
+//     feul : {
+//         type : String,
+//     },
+//    seat : {
+//         type : String,
+//     },
+//     transmission : {
+//         type : String
+//     },
+//     // registrationBook : {
+//     //     type : PNG,
+//     //     required : true,
+//     // },
+//     // insuarance : {
+//     //     type : PNG
+//     // },
+
+// }, { timestamps: true });
+ 
+// module.exports = mongoose.model('RideDriverVehicles', DriverSchema);
 
 
 

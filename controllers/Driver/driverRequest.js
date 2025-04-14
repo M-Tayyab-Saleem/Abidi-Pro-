@@ -1,51 +1,40 @@
 const Driver = require("../../models/UserManagment/DriverSchema");
+const { NotFoundError } = require("../../utils/ExpressError");
 
+// PATCH/PUT: Create or Update a Driver
 const createOrUpdateDriver = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { driverDeclineReason, driverReSubmit } = req.body;
+  const { id } = req.params;
+  const { driverDeclineReason, driverReSubmit } = req.body;
 
-    const updatedDriver = await Driver.findByIdAndUpdate(
-      id,
-      { driverDeclineReason, driverReSubmit },
-      { new: true }
-    );
+  const updatedDriver = await Driver.findByIdAndUpdate(
+    id,
+    { driverDeclineReason, driverReSubmit },
+    { new: true }
+  );
 
-    if (!updatedDriver) {
-      return res.status(404).json({ error: "Driver not found" });
-    }
-
-    return res.json(updatedDriver);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Something went wrong" });
+  if (!updatedDriver) {
+    throw new NotFoundError("Driver");
   }
+
+  res.json(updatedDriver);
 };
 
+// GET: All Driver Requests
 const getAllDriverRequests = async (req, res) => {
-  try {
-    const drivers = await Driver.find({}).sort({ createdAt: -1 });
-    res.status(200).json(drivers);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error retrieving drivers", details: error.message });
-  }
+  const drivers = await Driver.find({}).sort({ createdAt: -1 });
+  res.status(200).json(drivers);
 };
 
+// GET: Single Driver Request by ID
 const getDriverRequestById = async (req, res) => {
   const { id } = req.params;
-  try {
-    const driver = await Driver.findById(id);
-    if (!driver) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.status(200).json(driver);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error retrieving driver", details: error.message });
+
+  const driver = await Driver.findById(id);
+  if (!driver) {
+    throw new NotFoundError("Driver");
   }
+
+  res.status(200).json(driver);
 };
 
 module.exports = {

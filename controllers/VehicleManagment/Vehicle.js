@@ -1,70 +1,52 @@
-const Vehicle = require("../../models/UserManagment/DriverSchema");
-
-const getAllVehicles = async (req, res) => {
-  try {
-    const vehicles = await Vehicle.find({}).sort({ createdAt: -1 });
-    res.status(200).json(vehicles);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error retrieving vehicles", details: error.message });
+const Vehicle = require("../../models/UserManagment/VehicleSchema");
+const { NotFoundError, BadRequestError } = require("../../utils/ExpressError"); 
+const getAllVehicles = async (req, res, next) => {
+  const vehicles = await Vehicle.find({}).populate("driver").sort({ createdAt: -1 });
+  
+  if (!vehicles.length) {
+    return next(new NotFoundError("Vehicles"));
   }
+
+  res.status(200).json(vehicles);
 };
 
-const getVehicleById = async (req, res) => {
+const getVehicleById = async (req, res, next) => {
   const { id } = req.params;
-  try {
-    const vehicle = await Vehicle.findById(id);
-    if (!vehicle) {
-      return res.status(404).json({ error: "Vehicle not found" });
-    }
-    res.status(200).json(vehicle);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error retrieving vehicle", details: error.message });
+  const vehicle = await Vehicle.findById(id).populate("driver");
+
+  if (!vehicle) {
+    return next(new NotFoundError("Vehicle"));
   }
+
+  res.status(200).json(vehicle);
 };
 
-const updateVehicle = async (req, res) => {
+const updateVehicle = async (req, res, next) => {
   const { id } = req.params;
-  const { make, carType, color, year, owner, licensePlateNo, feul } = req.body;
+  const { make, carType, color, year, owner, licensePlateNo, fuel } = req.body;
 
-  try {
-    const updatedVehicle = await Vehicle.findByIdAndUpdate(
-      id,
-      { make, carType, color, year, owner, licensePlateNo, feul },
-      { new: true }
-    );
+  const updatedVehicle = await Vehicle.findByIdAndUpdate(
+    id,
+    { make, carType, color, year, owner, licensePlateNo, fuel },
+    { new: true }
+  );
 
-    if (!updatedVehicle) {
-      return res.status(404).json({ error: "Vehicle not found" });
-    }
-
-    res.status(200).json(updatedVehicle);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error updating vehicle", details: error.message });
+  if (!updatedVehicle) {
+    return next(new NotFoundError("Vehicle"));
   }
+
+  res.status(200).json(updatedVehicle);
 };
 
-const deleteVehicle = async (req, res) => {
+const deleteVehicle = async (req, res, next) => {
   const { id } = req.params;
+  const deletedVehicle = await Vehicle.findByIdAndDelete(id);
 
-  try {
-    const deletedVehicle = await Vehicle.findByIdAndDelete(id);
-
-    if (!deletedVehicle) {
-      return res.status(404).json({ error: "Vehicle not found" });
-    }
-
-    res.status(200).json({ message: "Vehicle deleted successfully" });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error deleting vehicle", details: error.message });
+  if (!deletedVehicle) {
+    return next(new NotFoundError("Vehicle"));
   }
+
+  res.status(200).json({ message: "Vehicle deleted successfully" });
 };
 
 module.exports = {

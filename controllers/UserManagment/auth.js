@@ -1,211 +1,160 @@
+require('dotenv').config();
 const User = require("../../models/UserManagment/UserSchema");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const { info, warn, error, debug } = require("../../utils/logger"); // Import your logger utilityconst generateOTP = () => Math.floor(100000 + Math.random() * 900000);
+const { info, warn, error, debug } = require("../../utils/logger");
+const { BadRequestError, NotFoundError } = require('../../utils/ExpressError');
+
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "syedmunawarali906@gmail.com",
-    pass: "tsdo zpys wyoc lykh",
+    user: process.env.GMAIL,
+    pass: process.env.GMAIL_PASSWORD,
   },
 });
 
-// Regular expression for password validation
 const validatePassword = (password) => {
-  const minLength = 8; // Minimum password length
-  const passwordRegex =
-    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const minLength = 8;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-  // Check if the password is at least 8 characters long and meets the criteria
   if (password.length < minLength) {
-    return {
-      valid: false,
-      message: `Password must be at least ${minLength} characters long.`,
-    };
+    throw new BadRequestError(`Password must be at least ${minLength} characters long.`);
   }
   if (!passwordRegex.test(password)) {
-    return {
-      valid: false,
-      message:
-        "Password must contain at least one letter, one number, and one special character.",
-    };
+    throw new BadRequestError("Password must contain at least one letter, one number, and one special character.");
   }
-  return { valid: true };
 };
 
-
-//Create a new user
-const createUser =  async (req, res) => {
-  try {
-    const { email, name, password, role } = req.body;
-    // Validate the password
-    const { valid, message } = validatePassword(password);
-    if (!valid) {
-      return res.status(400).json({ message });
-    }
-    const hashpassword = bcrypt.hashSync(password);
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-    let prefix = "";
-    if (role === "Admin" || role === "admin") {
-      prefix = "RideAD";
-    } else if (role === "Accountant" || role === "accountant") {
-      prefix = "RideAC";
-    } else if (role === "Dispatcher" || role === "dispatcher") {
-      prefix = "RideD";
-    }
-    let customId = "";
-    if (prefix) {
-      const count = await User.countDocuments({ role });
-      const nextNumber = count + 1;
-      const paddedNumber = String(nextNumber).padStart(3, "0");
-      customId = prefix + paddedNumber;
-    }
-    const userRole = role.toLowerCase();
-    const user = new User({
-      name,
-      email,
-      password: hashpassword,
-      role: userRole,
-      customId,
-    });
-    await user.save();
-    res.status(200).json({ user });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+// Create a new user
+const createUser = async (req, res) => {
+  const { email, name, password, role } = req.body;
+  
+  validatePassword(password);
+  const hashpassword = bcrypt.hashSync(password);
+  
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    throw new BadRequestError("User already exists");
   }
+
+  let prefix = "";
+  if (role === "Admin" || role === "admin") {
+    prefix = "RideAD";
+  } else if (role === "Accountant" || role === "accountant") {
+    prefix = "RideAC";
+  } else if (role === "Dispatcher" || role === "dispatcher") {
+    prefix = "RideD";
+  }
+
+  let customId = "";
+  if (prefix) {
+    const count = await User.countDocuments({ role });
+    const nextNumber = count + 1;
+    const paddedNumber = String(nextNumber).padStart(3, "0");
+    customId = prefix + paddedNumber;
+  }
+
+  const userRole = role.toLowerCase();
+  const user = new User({
+    name,
+    email,
+    password: hashpassword,
+    role: userRole,
+    customId,
+  });
+
+  await user.save();
+  res.status(200).json({ user });
 };
 
 // Get all users
-const getAllUsers =  async (req, res) => {
-  try {
-    const users = await User.find({}).sort({ createdAt: -1 });
-    res.status(200).json(users);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error retrieving users", details: error.message });
-  }
+const getAllUsers = async (req, res) => {
+  const users = await User.find({}).sort({ createdAt: -1 });
+  res.status(200).json(users);
 };
 
-//get Specific user by ID
+// Get specific user by ID
 const getUserById = async (req, res) => {
   const { id } = req.params;
-  try {
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.status(200).json(user);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error retrieving user", details: error.message });
+  const user = await User.findById(id);
+  if (!user) {
+    throw new NotFoundError("User");
   }
+  res.status(200).json(user);
 };
 
-// Update user 
+// Update user
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, email, role } = req.body;
-  try {
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.role = role || user.role;
-    await user.save();
-    res.status(200).json({
-      user: {
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error updating user", details: error.message });
+
+  const user = await User.findById(id);
+  if (!user) {
+    throw new NotFoundError("User");
   }
+
+  user.name = name || user.name;
+  user.email = email || user.email;
+  user.role = role || user.role;
+  await user.save();
+
+  res.status(200).json({
+    user: {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  });
 };
 
 // Delete user
 const deleteUser = async (req, res) => {
   const { id } = req.params;
-  try {
-    console.log(`Trying to delete user with id: ${id}`);
-    const user = await User.findByIdAndDelete(id);
-    if (!user) {
-      console.log("User not found");
-      return res.status(404).json({ error: "User not found" });
-    }
-    console.log(`User deleted successfully: ${user}`);
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    res
-      .status(500)
-      .json({ error: "Error deleting user", details: error.message });
+  const user = await User.findByIdAndDelete(id);
+  if (!user) {
+    throw new NotFoundError("User");
   }
+  res.status(200).json({ message: "User deleted successfully" });
 };
-
 
 // Signin route
 const signIn = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    // Log incoming signin request
-    info(`Signin request received for email: ${email}`);
+  info(`Signin request received for email: ${email}`);
 
-    // Check if user exists
-    const user = await User.findOne({ email });
-    if (!user) {
-      const errorMsg = "Please Sign Up first!";
-      // Log login failure
-      error(`Login failed for ${email}: ${errorMsg}`);
-      return res.status(400).json({ message: errorMsg });
-    }
+  const user = await User.findOne({ email });
+  if (!user) {
+    error(`Login failed for ${email}: Please Sign Up first!`);
+    throw new BadRequestError("Please Sign Up first!");
+  }
 
-    // Compare password
-    const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-    if (!isPasswordCorrect) {
-      const errorMsg = "Invalid Password";
-      // Log invalid password attempt
-      error(`Invalid password attempt for ${email}`);
-      return res.status(400).json({ message: errorMsg });
-    }
+  const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+  if (!isPasswordCorrect) {
+    error(`Invalid password attempt for ${email}`);
+    throw new BadRequestError("Invalid Password");
+  }
 
-    // Log successful login
-    info(`User ${email} successfully logged in.`);
+  info(`User ${email} successfully logged in.`);
 
-    // Generate OTP
-    const currentTime = new Date();
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000); // OTP expires in 1 minute
-    user.otp = otp;
-    user.otpGeneratedAt = currentTime;
-    user.otpExpires = otpExpires;
+  const currentTime = new Date();
+  const otp = generateOTP();
+  const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000);
 
-    // Log OTP generation
-    debug(
-      `OTP generated for ${email}: ${otp} (expires at ${otpExpires.toISOString()})`
-    );
+  user.otp = otp;
+  user.otpGeneratedAt = currentTime;
+  user.otpExpires = otpExpires;
+  debug(`OTP generated for ${email}: ${otp} (expires at ${otpExpires.toISOString()})`);
+  await user.save();
 
-    await user.save();
+  info(`OTP successfully generated for ${email}. Sending OTP...`);
 
-    // Log OTP generated but not sent yet
-    info(`OTP successfully generated for ${email}. Sending OTP...`);
-
-    const mailOptions = {
-      from: 'no-reply@yourdomain.com', // Your email
-      to: user.email,
-      subject: 'Your OTP for Via Ride',
-      html: `
+  const mailOptions = {
+    from: 'no-reply@yourdomain.com',
+    to: user.email,
+    subject: 'Your OTP for Via Ride',
+    html:`
         <html>
           <head>
             <style>
@@ -286,108 +235,79 @@ const signIn = async (req, res) => {
           </body>
         </html>
       `
-    };
-    
+  };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending OTP:", error);
-        return res.status(500).json({ message: "Error sending OTP email" });
-      }
-      console.log("Email sent: " + info.response);
-    });
+  transporter.sendMail(mailOptions, (mailError) => {
+    if (mailError) {
+      error(`Error sending OTP to ${email}: ${mailError.message}`);
+      throw new Error("Error sending OTP email");
+    }
+  });
 
-    res.status(200).json({
-      message: "OTP sent to your email",
-      email: user.email,
-      name: user.name,
-      id: user._id,
-      role: user.role,
-      otpGeneratedAt: currentTime.toISOString(),
-      otpExpiresAt: otpExpires.toISOString(),
-    });
-  } catch (error) {
-    console.error("Signin Error:", error.message);
-    // Log signin error
-    error(`Signin error: ${error.message}`);
-    res.status(500).json({ message: "Server Error" });
-  }
+  res.status(200).json({
+    message: "OTP sent to your email",
+    email: user.email,
+    name: user.name,
+    id: user._id,
+    role: user.role,
+    otpGeneratedAt: currentTime.toISOString(),
+    otpExpiresAt: otpExpires.toISOString(),
+  });
 };
 
 // Verify OTP route
 const verifyOtp = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
+  const { email, otp } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      // Log the failed verification attempt
-      error(`OTP verification failed for ${email}: User not found`);
-      return res.status(400).json({ message: "User not found" });
-    }
-
-    if (!user.otp || user.otpExpires < new Date()) {
-      // Log OTP expiry
-      error(`OTP expired for ${email}`);
-      return res
-        .status(400)
-        .json({ message: "OTP expired. Please request a new one." });
-    }
-
-    if (user.otp !== otp) {
-      // Log invalid OTP attempt
-      error(`Invalid OTP attempt for ${email}`);
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
-
-    // Clear OTP after successful verification
-    user.otp = null;
-    user.otpExpires = null;
-    await user.save();
-
-    // Log successful OTP verification
-    info(`OTP verified successfully for ${email}`);
-    res.status(200).json({ message: "OTP verified successfully!" });
-  } catch (error) {
-    console.error("OTP Verification Error:", error.message);
-    // Log error during OTP verification
-    error(
-      `Server error during OTP verification for ${email}: ${error.message}`
-    );
-    res.status(500).json({ message: "Server Error" });
+  const user = await User.findOne({ email });
+  if (!user) {
+    error(`OTP verification failed for ${email}: User not found`);
+    throw new NotFoundError("User");
   }
+
+  if (!user.otp || user.otpExpires < new Date()) {
+    error(`OTP expired for ${email}`);
+    throw new BadRequestError("OTP expired. Please request a new one.");
+  }
+
+  if (user.otp !== otp) {
+    error(`Invalid OTP attempt for ${email}`);
+    throw new BadRequestError("Invalid OTP");
+  }
+
+  user.otp = null;
+  user.otpExpires = null;
+  await user.save();
+
+  info(`OTP verified successfully for ${email}`);
+  res.status(200).json({ message: "OTP verified successfully!" });
 };
 
 // Resend OTP route
 const resendOtp = async (req, res) => {
-  try {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      // Log the failed resend attempt
-      error(`Resend OTP failed for ${email}: User not found`);
-      return res.status(400).json({ message: "User not found" });
-    }
+  const user = await User.findOne({ email });
+  if (!user) {
+    error(`Resend OTP failed for ${email}: User not found`);
+    throw new NotFoundError("User");
+  }
 
-    // Remove old OTP and generate a new one
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    const currentTime = new Date();
-    const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000); // OTP expires in 1 minute
+  const otp = generateOTP();
+  const currentTime = new Date();
+  const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000);
 
-    user.otp = otp;
-    user.otpExpires = otpExpires;
-    await user.save();
+  user.otp = otp;
+  user.otpExpires = otpExpires;
+  await user.save();
 
-    // Log OTP resend success
-    info(`New OTP sent to ${email}`);
+  info(`New OTP sent to ${email}`);
 
-    // Send OTP via email (use your transporter or mailer logic here)
-    const mailOptions = {
-      from: "no-reply@yourdomain.com",
-      to: email,
-      subject: "Your OTP",
-      html: `
+  const mailOptions = {
+    from: "no-reply@yourdomain.com",
+    to: email,
+    subject: "Your OTP",
+    html: `
         <html>
           <head>
             <style>
@@ -466,24 +386,17 @@ const resendOtp = async (req, res) => {
               </div>
             </div>
           </body>
-        </html>
-      `
-    };
+        </html> `
+  };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending OTP:", error);
-        return res.status(500).json({ message: "Error sending OTP email" });
-      }
-      console.log("Email sent: " + info.response);
-    });
+  transporter.sendMail(mailOptions, (mailError) => {
+    if (mailError) {
+      error(`Error sending OTP to ${email}: ${mailError.message}`);
+      throw new Error("Error sending OTP email");
+    }
+  });
 
-    res.status(200).json({ message: "New OTP sent to your email" });
-  } catch (error) {
-    console.error("Resend OTP Error:", error.message);
-    error(`Error resending OTP for ${email}: ${error.message}`);
-    res.status(500).json({ message: "Server Error" });
-  }
+  res.status(200).json({ message: "New OTP sent to your email" });
 };
 
 module.exports = {

@@ -12,22 +12,22 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "syedmunawarali906@gmail.com", // Replace with your email
-    pass: "tsdo zpys wyoc lykh",         // Replace with your email password
+    pass: "tsdo zpys wyoc lykh", // Replace with your email password
   },
 });
 
 const sendEmailNotification = async (logsData) => {
   // Clean up the log data by excluding internal Mongoose properties
-  const cleanedLogsData = logsData.map(log => {
+  const cleanedLogsData = logsData.map((log) => {
     return {
-      _id: log._id.toString(),  // Convert _id to string for better readability
+      _id: log._id.toString(), // Convert _id to string for better readability
       level: log.level,
       message: log.message,
-      timestamp: log.createdAt.toISOString(),  // Convert timestamp to ISO string
+      timestamp: log.createdAt.toISOString(), // Convert timestamp to ISO string
     };
   });
 
-  console.log('Logs data to send via email:', cleanedLogsData);  // Log the cleaned logs data
+  console.log("Logs data to send via email:", cleanedLogsData); // Log the cleaned logs data
 
   // Convert cleaned log data to XLSX format
   const worksheet = XLSX.utils.json_to_sheet(cleanedLogsData); // Convert cleaned log data to a sheet
@@ -49,12 +49,12 @@ const sendEmailNotification = async (logsData) => {
   }
 
   // Extract emails of all admin users
-  const adminEmails = adminUsers.map(user => user.email);
+  const adminEmails = adminUsers.map((user) => user.email);
 
   // Define the email options
   const mailOptions = {
     from: "no-reply@viaride.com", // Your email
-    to: adminEmails,             // Send to all admin emails
+    to: adminEmails, // Send to all admin emails
     subject: "Logs from the Last 30 Minutes",
     html: `
       <html>
@@ -94,18 +94,17 @@ const sendEmailNotification = async (logsData) => {
     attachments: [
       {
         filename: "logs_to_send.xlsx", // Name of the file to be attached
-        path: filePath,               // Path to the generated XLSX file
+        path: filePath, // Path to the generated XLSX file
       },
     ],
   };
-  
 
   // Send email with attachment to all admins
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error("Error sending email:", error);
     } else {
-      console.log("Email sent: " + info.response);  // This will show if the email is sent
+      console.log("Email sent: " + info.response); // This will show if the email is sent
     }
 
     // Delete the temporary XLSX file after email is sent
@@ -119,26 +118,38 @@ const sendEmailNotification = async (logsData) => {
   });
 };
 
-
-cron.schedule("0 0 * * *", async () => { // Runs every day at midnight
+cron.schedule("0 0 * * *", async () => {
+  // Runs every day at midnight
   try {
     const now = new Date();
     const thirtyMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000); // Subtract 5 minutes from the current time
 
     console.log(`Cron job executed at: ${now.toISOString()}`);
-    console.log(`Searching for logs between ${thirtyMinutesAgo.toISOString()} and ${now.toISOString()}`);
+    console.log(
+      `Searching for logs between ${thirtyMinutesAgo.toISOString()} and ${now.toISOString()}`
+    );
 
     // Find logs created within the last 5 minutes
-    const logsToSend = await Log.find({ createdAt: { $gte: thirtyMinutesAgo, $lt: now } });
+    const logsToSend = await Log.find({
+      createdAt: { $gte: thirtyMinutesAgo, $lt: now },
+    });
 
     if (logsToSend.length > 0) {
-      console.log(`${logsToSend.length} logs found between ${thirtyMinutesAgo.toISOString()} and ${now.toISOString()}.`);
+      console.log(
+        `${
+          logsToSend.length
+        } logs found between ${thirtyMinutesAgo.toISOString()} and ${now.toISOString()}.`
+      );
       // Send the logs via email
       sendEmailNotification(logsToSend);
 
       // After sending the email, delete the logs
-      const deletedLogs = await Log.deleteMany({ createdAt: { $gte: thirtyMinutesAgo, $lt: now } });
-      console.log(`${deletedLogs.deletedCount} logs deleted from the database.`);
+      const deletedLogs = await Log.deleteMany({
+        createdAt: { $gte: thirtyMinutesAgo, $lt: now },
+      });
+      console.log(
+        `${deletedLogs.deletedCount} logs deleted from the database.`
+      );
     } else {
       console.log("No logs found in the last 5 minutes.");
     }
@@ -146,7 +157,3 @@ cron.schedule("0 0 * * *", async () => { // Runs every day at midnight
     console.error("Error processing logs:", err);
   }
 });
-
-  
-  
-  
