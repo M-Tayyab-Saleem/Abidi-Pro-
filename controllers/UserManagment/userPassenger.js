@@ -1,7 +1,12 @@
 const Passenger = require("../../models/UserManagment/PassengerSchema");
 const { NotFoundError, BadRequestError } = require("../../utils/ExpressError");
 
+
+// create a new passenger
 const createPassenger = async (req, res, next) => {
+  const url = req.file.path;
+  const filename = req.file.filename;
+  console.log(url, "... ", filename);
   const {
     passengerName,
     passengerContact,
@@ -25,11 +30,18 @@ const createPassenger = async (req, res, next) => {
     passengerCardNumber,
   });
 
+  newPassenger.passengerImage = {
+    url,
+    filename,
+  };
+
   await newPassenger.save();
 
   res.status(201).json({ passenger: newPassenger });
 };
 
+
+// Get all passengers
 const getAllPassengers = async (req, res, next) => {
   const passengers = await Passenger.find({}).sort({ createdAt: -1 });
 
@@ -40,6 +52,8 @@ const getAllPassengers = async (req, res, next) => {
   res.status(200).json(passengers);
 };
 
+
+// Get a passenger by ID
 const getPassengerById = async (req, res, next) => {
   const { id } = req.params;
   const passenger = await Passenger.findById(id);
@@ -51,6 +65,8 @@ const getPassengerById = async (req, res, next) => {
   res.status(200).json(passenger);
 };
 
+
+// Update passenger details
 const updatePassenger = async (req, res, next) => {
   const { id } = req.params;
   const {
@@ -82,6 +98,8 @@ const updatePassenger = async (req, res, next) => {
   res.status(200).json(updatedPassenger);
 };
 
+
+// Delete a passenger
 const deletePassenger = async (req, res, next) => {
   const { id } = req.params;
   const deletedPassenger = await Passenger.findByIdAndDelete(id);

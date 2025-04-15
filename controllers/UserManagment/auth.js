@@ -124,7 +124,7 @@ const signIn = async (req, res) => {
 
   info(`Signin request received for email: ${email}`);
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
   if (!user) {
     error(`Login failed for ${email}: Please Sign Up first!`);
     throw new BadRequestError("Please Sign Up first!");
@@ -282,6 +282,9 @@ const verifyOtp = async (req, res) => {
   info(`OTP verified successfully for ${email}`);
   res.status(200).json({ message: "OTP verified successfully!" });
 };
+
+
+
 
 // Resend OTP route
 const resendOtp = async (req, res) => {

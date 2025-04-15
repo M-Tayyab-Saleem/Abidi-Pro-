@@ -22,6 +22,10 @@ const passengerSchema = new mongoose.Schema({
     passengerCardNumber: {
         type: Number
     },
+    passengerImage: {
+        url : String,
+        filename : String
+    },
 }, { timestamps: true });
  
 module.exports = mongoose.model('Ride Passenger', passengerSchema);

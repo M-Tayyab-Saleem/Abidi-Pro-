@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const catchAsync = require("../utils/catchAsync");
+const multer  = require('multer')
+const {storage}= require("../storageConfig");
+const upload = multer({ storage });
 
 const {
   getAllDrivers,
@@ -147,7 +150,8 @@ router.put("/dispatcher/:id", validateRequest(userUpdateSchema), catchAsync(upda
 router.delete("/dispatcher/:id", catchAsync(deleteDispatcher));
 
 // Passenger Routes
-router.post("/createPassenger", validateRequest(passengerSchema), catchAsync(createPassenger));
+router.post("/createPassenger", upload.single('passengerImage'), catchAsync(createPassenger));
+// router.post("/createPassenger", validateRequest(passengerSchema), catchAsync(createPassenger));
 router.get("/createPassenger", catchAsync(getAllPassengers));
 router.get("/createPassenger/:id", catchAsync(getPassengerById));
 router.put("/createPassenger/:id", validateRequest(passengerUpdateSchema), catchAsync(updatePassenger));
