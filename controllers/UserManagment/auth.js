@@ -1,10 +1,13 @@
-require('dotenv').config();
+require("dotenv").config();
 const User = require("../../models/UserManagment/UserSchema");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const { info, warn, error, debug } = require("../../utils/logger");
-const { BadRequestError, NotFoundError } = require('../../utils/ExpressError');
+const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
+const jwt = require("jsonwebtoken");
+const BlacklistedToken = require("../../models/UserManagment/BlacklistedTokenSchema");
 
+// Generate a random 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -14,36 +17,57 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Password validation function
 const validatePassword = (password) => {
   const minLength = 8;
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const passwordRegex =
+    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   if (password.length < minLength) {
-    throw new BadRequestError(`Password must be at least ${minLength} characters long.`);
+    throw new BadRequestError(
+      `Password must be at least ${minLength} characters long.`
+    );
   }
   if (!passwordRegex.test(password)) {
-    throw new BadRequestError("Password must contain at least one letter, one number, and one special character.");
+    throw new BadRequestError(
+      "Password must contain at least one letter, one number, and one special character."
+    );
   }
+};
+
+// Function to generate token
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
 };
 
 // Create a new user
 const createUser = async (req, res) => {
-  const { email, name, password, role } = req.body;
-  
+  const { email, name, password } = req.body;
+
   validatePassword(password);
   const hashpassword = bcrypt.hashSync(password);
-  
+
   const userExists = await User.findOne({ email });
   if (userExists) {
     throw new BadRequestError("User already exists");
   }
 
+  const role = req.body.role?.toLowerCase();
+
   let prefix = "";
-  if (role === "Admin" || role === "admin") {
+  if (role === "admin") {
     prefix = "RideAD";
-  } else if (role === "Accountant" || role === "accountant") {
+  } else if (role === "accountant") {
     prefix = "RideAC";
-  } else if (role === "Dispatcher" || role === "dispatcher") {
+  } else if (role === "dispatcher") {
     prefix = "RideD";
   }
 
@@ -55,16 +79,37 @@ const createUser = async (req, res) => {
     customId = prefix + paddedNumber;
   }
 
-  const userRole = role.toLowerCase();
   const user = new User({
     name,
     email,
     password: hashpassword,
-    role: userRole,
+    role,
     customId,
   });
-
   await user.save();
+
+  // Generate JWT token for the new user
+  const token = generateToken(user);
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  res.status(201).json({
+    message: "User created successfully",
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      customId: user.customId,
+    },
+    token,
+  });
+
   res.status(200).json({ user });
 };
 
@@ -140,21 +185,23 @@ const signIn = async (req, res) => {
 
   const currentTime = new Date();
   const otp = generateOTP();
-  const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000);
+  const otpExpires = new Date(currentTime.getTime() + 5 * 60 * 1000);
 
   user.otp = otp;
   user.otpGeneratedAt = currentTime;
   user.otpExpires = otpExpires;
-  debug(`OTP generated for ${email}: ${otp} (expires at ${otpExpires.toISOString()})`);
+  debug(
+    `OTP generated for ${email}: ${otp} (expires at ${otpExpires.toISOString()})`
+  );
   await user.save();
 
   info(`OTP successfully generated for ${email}. Sending OTP...`);
 
   const mailOptions = {
-    from: 'no-reply@yourdomain.com',
-    to: user.email,
-    subject: 'Your OTP for Via Ride',
-    html:`
+    from: "no-reply@yourdomain.com",
+    to: email,
+    subject: "Your OTP for Via Ride",
+    html: `
         <html>
           <head>
             <style>
@@ -224,7 +271,7 @@ const signIn = async (req, res) => {
                 <h2>Welcome to Via Ride!</h2>
                 <p>We are excited to help you with your journey. To complete your login, please use the following OTP (One-Time Password) to verify your account:</p>
                 <div class="otp">${otp}</div>
-                <p>This OTP will expire in 1 minute. Please enter it promptly to continue.</p>
+                <p>This OTP will expire in 5 minute. Please enter it promptly to continue.</p>
                 <a href="https://yourdomain.com" class="cta">Go to Via Ride</a>
               </div>
               <div class="footer">
@@ -234,7 +281,7 @@ const signIn = async (req, res) => {
             </div>
           </body>
         </html>
-      `
+      `,
   };
 
   transporter.sendMail(mailOptions, (mailError) => {
@@ -279,12 +326,29 @@ const verifyOtp = async (req, res) => {
   user.otpExpires = null;
   await user.save();
 
+  // Generate token
+  const token = generateToken(user);
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
   info(`OTP verified successfully for ${email}`);
-  res.status(200).json({ message: "OTP verified successfully!" });
+  res.status(200).json({
+    message: "OTP verified successfully!",
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      customId: user.customId,
+    },
+  });
 };
-
-
-
 
 // Resend OTP route
 const resendOtp = async (req, res) => {
@@ -298,7 +362,7 @@ const resendOtp = async (req, res) => {
 
   const otp = generateOTP();
   const currentTime = new Date();
-  const otpExpires = new Date(currentTime.getTime() + 1 * 60 * 1000);
+  const otpExpires = new Date(currentTime.getTime() + 5 * 60 * 1000);
 
   user.otp = otp;
   user.otpExpires = otpExpires;
@@ -380,7 +444,7 @@ const resendOtp = async (req, res) => {
                 <h2>Welcome to Via Ride!</h2>
                 <p>We are excited to help you with your journey. To complete your login, please use the following OTP (One-Time Password) to verify your account:</p>
                 <div class="otp">${otp}</div>
-                <p>This OTP will expire in 1 minute. Please enter it promptly to continue.</p>
+                <p>This OTP will expire in 5 minute. Please enter it promptly to continue.</p>
                 <a href="https://yourdomain.com" class="cta">Go to Via Ride</a>
               </div>
               <div class="footer">
@@ -389,7 +453,7 @@ const resendOtp = async (req, res) => {
               </div>
             </div>
           </body>
-        </html> `
+        </html> `,
   };
 
   transporter.sendMail(mailOptions, (mailError) => {
@@ -402,6 +466,60 @@ const resendOtp = async (req, res) => {
   res.status(200).json({ message: "New OTP sent to your email" });
 };
 
+//Logout route
+const logout = async (req, res) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token && req.cookies?.token) {
+    token = req.cookies.token;
+  }
+
+  if (!token) {
+    throw new UnauthorizedError("No token provided for logout");
+  }
+
+  // Decode and blacklist the token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const expiryDate = new Date(decoded.exp * 1000);
+
+  await BlacklistedToken.create({ token, expiresAt: expiryDate });
+
+  // Clear the token cookie
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
+// Get current user profile
+const getCurrentUser = async (req, res) => {
+  const user = await User.findById(req.user.id, "-password -otp -otpExpires");
+
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+
+  res.status(200).json({
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      customId: user.customId,
+      createdAt: user.createdAt,
+    },
+  });
+};
+
 module.exports = {
   createUser,
   getAllUsers,
@@ -411,4 +529,6 @@ module.exports = {
   signIn,
   verifyOtp,
   resendOtp,
+  logout,
+  getCurrentUser,
 };

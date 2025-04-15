@@ -6,6 +6,7 @@ const cors = require("cors");
 require("./conn/conn");
 const app = express();
 const { ExpressError } = require("./utils/ExpressError");
+const cookieParser = require("cookie-parser");
 
 // Import the cron job from utils
 require("./utils/cronScheduler");  // This will execute the cron job when server starts
@@ -15,8 +16,11 @@ const PORT = process.env.PORT || 1000;
 const allRoutes = require("./routes/allRoutes");
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
 
+app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // API routes
 app.get('/', (req, res) => {
