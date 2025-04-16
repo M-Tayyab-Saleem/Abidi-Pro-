@@ -21,7 +21,7 @@ const isLoggedIn = async (req, res, next) => {
     // If still no token, throw unauthorized
     if (!token) {
       error('No authentication token found');
-      throw new UnauthorizedError('Not authorized to access this route');
+      throw new UnauthorizedError('Please login First.');
     }
 
     // Check if token is blacklisted

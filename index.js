@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 1000;
 
 
 const allRoutes = require("./routes/allRoutes");
+const userRoutes = require("./routes/userRoutes");
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
 
 app.use(cookieParser());
@@ -28,6 +29,7 @@ app.get('/', (req, res) => {
 });
 
 app.use("/api/viaRide", allRoutes);
+app.use("/api/viaRide/app", userRoutes);
 
 
 app.all("*", (req, res, next) => {

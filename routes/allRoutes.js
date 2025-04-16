@@ -63,6 +63,7 @@ const {
 } = require("../controllers/UserManagment/userPassenger");
 
 const {
+  createVehicle,
   getAllVehicles,
   getVehicleById,
   updateVehicle,
@@ -95,6 +96,9 @@ const {
   driverValidationSchema,
   driverUpdateSchema,
 } = require("../JoiSchema/DriverJoiSchema");
+
+const { vehicleValidateSchema } = require("../JoiSchema/VehicleJoiSchema");
+
 const logValidationSchema = require("../JoiSchema/LogJoiSchema");
 const {
   passengerSchema,
@@ -160,9 +164,10 @@ router.put("/createPassenger/:id", isLoggedIn, restrictTo('admin', 'dispatcher',
 router.delete("/createPassenger/:id", isLoggedIn, restrictTo('admin', 'dispatcher', 'passenger'), catchAsync(deletePassenger));
 
 // Vehicle Routes
+router.post("/create-vehicle", isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(createVehicle));
 router.get("/vehicle-get-values", isLoggedIn, catchAsync(getAllVehicles));
 router.get("/vehicle-get-values/:id", isLoggedIn, catchAsync(getVehicleById));
-router.put("/vehicle-put-values/:id", isLoggedIn, restrictTo('admin', 'dispatcher' ), catchAsync(updateVehicle));
+router.put("/vehicle-put-values/:id", isLoggedIn, restrictTo('admin', 'dispatcher', 'driver' ), catchAsync(updateVehicle));
 router.delete("/vehicle-delete-values/:id", isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(deleteVehicle));
 router.get("/vehicle-availability-get-values", isLoggedIn, catchAsync(getVehicleAvailability));
 router.get("/vehicle-details-get-values", isLoggedIn, catchAsync(getAllVehiclesDetails));

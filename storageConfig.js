@@ -10,12 +10,33 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-      folder: 'rideapp',
-      allowerdFormats: ["png","jpeg","jpg"],
+        folder: 'rideapp',
+        allowedFormats: ["png", "jpeg", "jpg"],
     },
-  });
+});
+
+// Create separate storage instances for different upload needs if needed
+const driverDocsStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'rideapp/driver_docs',
+        allowedFormats: ["png", "jpeg", "jpg"],
+    },
+});
+
+// Create separate storage instances for different upload needs if needed
+const vehicleDocsStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'rideapp/vehicle_docs',
+        allowedFormats: ["png", "jpeg", "jpg"],
+    },
+});
 
 module.exports = {
-    cloudinary, storage
+    cloudinary, 
+    storage,
+    driverDocsStorage,
+    vehicleDocsStorage
 }
    

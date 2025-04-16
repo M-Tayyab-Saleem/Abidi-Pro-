@@ -18,28 +18,61 @@ const createDriver = async (req, res) => {
     driverCity,
     driverBankName,
     driverIban,
-    make,
-    carType,
-    color,
-    year,
-    owner,
-    licensePlateNo,
-    feul,
-    seat,
-    transmission
+    driverBirthDate,
   } = req.body;
 
-  const driverExists = await Driver.findOne({ driverContact });
+  // Check if driver already exists
+  const driverExists = await Driver.findOne({ 
+    $or: [
+      { driverContact },
+      { driverCnic },
+      { driverEmail }
+    ]
+  });
   if (driverExists) {
-    throw new BadRequestError('Driver with this contact number already exists');
+    throw new BadRequestError('Driver with these details already exists');
   }
 
+  // Generate driver ID
   const prefix = "RideDr";
   const count = await Driver.countDocuments();
   const nextNumber = count + 1;
   const paddedNumber = String(nextNumber).padStart(3, "0");
   const driverID = prefix + paddedNumber;
 
+  // Process uploaded files
+  const driverProfilePic = req.files?.driverProfilePic?.[0] ? {
+    url: req.files.driverProfilePic[0].path,
+    filename: req.files.driverProfilePic[0].filename
+  } : null;
+
+  const driverCnicPicFront = req.files?.driverCnicPicFront?.[0] ? {
+    url: req.files.driverCnicPicFront[0].path,
+    filename: req.files.driverCnicPicFront[0].filename
+  } : null;
+
+  const driverCnicPicBack = req.files?.driverCnicPicBack?.[0] ? {
+    url: req.files.driverCnicPicBack[0].path,
+    filename: req.files.driverCnicPicBack[0].filename
+  } : null;
+
+  const driverLicensePicFront = req.files?.driverLicensePicFront?.[0] ? {
+    url: req.files.driverLicensePicFront[0].path,
+    filename: req.files.driverLicensePicFront[0].filename
+  } : null;
+
+  const driverLicensePicBack = req.files?.driverLicensePicBack?.[0] ? {
+    url: req.files.driverLicensePicBack[0].path,
+    filename: req.files.driverLicensePicBack[0].filename
+  } : null;
+
+
+  // Validate required documents
+  if (!driverCnicPicFront || !driverCnicPicBack || !driverLicensePicFront || !driverLicensePicBack) {
+    throw new BadRequestError('All required documents (CNIC front/back, License front/back) must be uploaded');
+  }
+
+  // Create new driver
   const newDriver = new Driver({
     driverID,
     driverName,
@@ -56,41 +89,23 @@ const createDriver = async (req, res) => {
     driverCity,
     driverBankName,
     driverIban,
+    driverBirthDate,
+    driverProfilePic,
+    driverCnicPicFront,
+    driverCnicPicBack,
+    driverLicensePicFront,
+    driverLicensePicBack,
+    status: 'pending' 
   });
 
   const savedDriver = await newDriver.save();
-
-  if (licensePlateNo) {
-    const vehiclePrefix = "RideV";
-    const vehicleCount = await Vehicle.countDocuments();
-    const vehicleNextNumber = vehicleCount + 1;
-    const vehiclePaddedNumber = String(vehicleNextNumber).padStart(3, "0");
-    const vehicleID = vehiclePrefix + vehiclePaddedNumber;
-
-    const newVehicle = new Vehicle({
-      vehicleID,
-      make,
-      carType,
-      color,
-      year,
-      owner,
-      licensePlateNo,
-      feul,
-      seat,
-      transmission,
-      driver: savedDriver._id
-    });
-
-    const savedVehicle = await newVehicle.save();
-    savedDriver.assignedVehicle = savedVehicle._id;
-    await savedDriver.save();
-  }
-
   res.status(201).json({ 
+    success: true,
     driver: savedDriver,
     message: "Driver created successfully" 
   });
 };
+
 
 const getAllUserDrivers = async (req, res) => {
   const drivers = await Driver.find({}).populate('assignedVehicle').sort({ createdAt: -1 });

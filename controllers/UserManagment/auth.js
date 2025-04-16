@@ -172,7 +172,7 @@ const signIn = async (req, res) => {
   const user = await User.findOne({ email }).select("+password");
   if (!user) {
     error(`Login failed for ${email}: Please Sign Up first!`);
-    throw new BadRequestError("Please Sign Up first!");
+    throw new BadRequestError("You are not registered. Please Sign Up first!");
   }
 
   const isPasswordCorrect = bcrypt.compareSync(password, user.password);

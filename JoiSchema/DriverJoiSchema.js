@@ -1,4 +1,5 @@
 const Joi = require("joi");
+const { assign } = require("nodemailer/lib/shared");
 
 const driverValidationSchema = Joi.object({
   driverID: Joi.string(),
@@ -11,12 +12,13 @@ const driverValidationSchema = Joi.object({
   }),
 
   driverContact: Joi.string()
-  .pattern(/^((\+92)|(0092)|(92)|(0))?(3[0-9]{9})$/)
-  .required()
-  .messages({
-    'string.pattern.base': 'Please enter a valid Pakistani phone number (e.g., 03001234567 or +923001234567)',
-    'any.required': 'Contact number is required'
-  }),
+    .pattern(/^((\+92)|(0092)|(92)|(0))?(3[0-9]{9})$/)
+    .required()
+    .messages({
+      "string.pattern.base":
+        "Please enter a valid Pakistani phone number (e.g., 03001234567 or +923001234567)",
+      "any.required": "Contact number is required",
+    }),
 
   driverEarning: Joi.string()
     .pattern(/^\d+(\.\d{1,2})?$/) // Decimal number
@@ -94,78 +96,82 @@ const driverValidationSchema = Joi.object({
     "date.base": "Invalid date format",
   }),
 
+  // Required image validations
+  driverProfilePic: Joi.object({
+    url: Joi.string().uri().allow(""),
+    filename: Joi.string().allow(""),
+  }).optional(),
+
+  driverCnicPicFront: Joi.object({
+    url: Joi.string().uri().required().messages({
+      "string.uri": "CNIC front image must be a valid URL",
+      "any.required": "CNIC front image is required",
+    }),
+    filename: Joi.string().required().messages({
+      "any.required": "CNIC front image filename is required",
+    }),
+  }),
+
+  driverCnicPicBack: Joi.object({
+    url: Joi.string().uri().required().messages({
+      "string.uri": "CNIC back image must be a valid URL",
+      "any.required": "CNIC back image is required",
+    }),
+    filename: Joi.string().required().messages({
+      "any.required": "CNIC back image filename is required",
+    }),
+  }),
+
+  driverLicensePicFront: Joi.object({
+    url: Joi.string().uri().required().messages({
+      "string.uri": "License front image must be a valid URL",
+      "any.required": "License front image is required",
+    }),
+    filename: Joi.string().required().messages({
+      "any.required": "License front image filename is required",
+    }),
+  }),
+
+  driverLicensePicBack: Joi.object({
+    url: Joi.string().uri().required().messages({
+      "string.uri": "License back image must be a valid URL",
+      "any.required": "License back image is required",
+    }),
+    filename: Joi.string().required().messages({
+      "any.required": "License back image filename is required",
+    }),
+  }),
+
   // Decline Reasons
   driverDeclineReason: Joi.string().max(500).messages({
     "string.max": "Decline reason cannot exceed 500 characters",
   }),
 
   driverReSubmit: Joi.string(),
-
-  vehicleDeclineReason: Joi.string().max(500).messages({
-    "string.max": "Decline reason cannot exceed 500 characters",
-  }),
-
-  vehicleReSubmit: Joi.string(),
-
-  // Vehicle Data
-  make: Joi.string().max(30).messages({
-    "string.max": "Make cannot exceed 30 characters",
-  }),
-
-  carType: Joi.string(),
-
-  color: Joi.string().max(20).messages({
-    "string.max": "Color cannot exceed 20 characters",
-  }),
-
-  year: Joi.string()
-    .pattern(/^(19|20)\d{2}$/) // 1900-2099
-    .messages({
-      "string.pattern.base": "Year must be between 1900-2099",
-    }),
-
-  owner: Joi.string().max(50).messages({
-    "string.max": "Owner name cannot exceed 50 characters",
-  }),
-
-  licensePlateNo: Joi.string().max(20).messages({
-    "string.max": "Owner name cannot exceed 20 characters",
-  }),
-
-  feul: Joi.string()
-    .valid("Petrol", "Diesel", "Electric", "Hybrid", "CNG")
-    .messages({
-      "any.only": "Invalid fuel type",
-    }),
-
-  seat: Joi.string()
-    .pattern(/^[2-4]$/) // 2-4 seats
-    .messages({
-      "string.pattern.base": "Seats must be 2-4",
-    }),
-
-  transmission: Joi.string()
-    .valid("Automatic", "Manual", "CVT", "Semi-Automatic", "EV")
-    .messages({
-      "any.only":
-        "Transmission must be one of the following: Automatic, Manual, CVT, Semi-Automatic, or EV",
-    }),
+  assignedVehicle: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .messages({
+        'string.pattern.base': 'Invalid trip ID format'
+      })
 });
-
 
 // For partial updates
 const driverUpdateSchema = driverValidationSchema.fork(
   [
-    'driverName',
-    'driverContact',
-    'driverCnic',
-    'driverEmail',
-    'licensePlateNo'
-  ], 
-  schema => schema.optional()
+    "driverName",
+    "driverContact",
+    "driverCnic",
+    "driverEmail",
+    "driverIban",
+    "driverCnicPicFront",
+    "driverCnicPicBack",
+    "driverLicensePicFront",
+    "driverLicensePicBack",
+  ],
+  (schema) => schema.optional()
 );
 
 module.exports = {
   driverValidationSchema,
-  driverUpdateSchema
+  driverUpdateSchema,
 };
