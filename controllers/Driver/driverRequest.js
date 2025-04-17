@@ -1,5 +1,7 @@
 const Driver = require("../../models/UserManagment/DriverSchema");
 const { NotFoundError } = require("../../utils/ExpressError");
+const Vehicle = require("../../models/UserManagment/VehicleSchema");
+
 
 // PATCH/PUT: Create or Update a Driver
 const createOrUpdateDriver = async (req, res) => {
@@ -29,7 +31,7 @@ const getAllDriverRequests = async (req, res) => {
 const getDriverRequestById = async (req, res) => {
   const { id } = req.params;
 
-  const driver = await Driver.findById(id);
+  const driver = await Driver.findById(id).populate('assignedVehicle');
   if (!driver) {
     throw new NotFoundError("Driver");
   }

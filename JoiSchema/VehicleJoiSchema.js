@@ -69,14 +69,9 @@ const vehicleValidateSchema = Joi.object({
   vehicleReSubmit: Joi.string().optional(),
   
   vehicleRegistrationBookFront: Joi.object({
-    url: Joi.string().uri().required().messages({
-      'string.uri': 'Registration book image must be a valid URL',
-      'any.required': 'Registration book image is required'
+      url: Joi.string().uri().allow(""),
+      filename: Joi.string().allow(""),
     }),
-    filename: Joi.string().required().messages({
-      'any.required': 'Registration book image filename is required'
-    })
-  }),
   
   vehicleInsurance: Joi.object({
     url: Joi.string().uri().allow(''),

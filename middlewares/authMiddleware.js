@@ -24,19 +24,19 @@ const isLoggedIn = async (req, res, next) => {
       throw new UnauthorizedError('Please login First.');
     }
 
-    // Check if token is blacklisted
+  
     const blacklistedToken = await BlacklistedToken.findOne({ token });
     if (blacklistedToken) {
       throw new UnauthorizedError('Token is no longer valid. Please login again.');
     }
 
-    // Verify token
+   
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {
     error(`Auth Middleware Error: ${err.message}`);
-    next(err); // Pass to global error handler
+    next(err); 
   }
 };
 

@@ -6,7 +6,6 @@ class ExpressError extends Error {
     }
 };
 
-
 class NotFoundError extends ExpressError {
   constructor(resource = "Resource") {
     super(404, `${resource} not found`);

@@ -66,8 +66,7 @@ const {
 
 const tripValidationSchema = require("../JoiSchema/TripsJoiSchema");
 const validateRequest = require("../middlewares/validateRequest");
-const { vehicleValidateSchema,
-  vehicleUpdateValidate } = require("../JoiSchema/VehicleJoiSchema");
+const { vehicleValidateSchema, vehicleUpdateValidate } = require("../JoiSchema/VehicleJoiSchema");
 
 
 
@@ -114,7 +113,7 @@ router.get("/passenger-profile/:id", isLoggedIn, catchAsync(getPassengerById));
 router.put("/passenger-profile/:id", isLoggedIn, validateRequest(passengerUpdateSchema), catchAsync(updatePassenger));
 
 // Driver Routes (for driver users)
-router.post("/driver-posting-entry", isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), uploadDriverFiles, validateRequest(driverValidationSchema), catchAsync(createDriver));
+router.post("/driver-posting-entry", isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), uploadDriverFiles,validateRequest(driverValidationSchema),catchAsync(createDriver));
 router.get("/driver-profile/:id", isLoggedIn, catchAsync(getUserDriverById));
 router.put("/driver-profile/:id", isLoggedIn, validateRequest(driverUpdateSchema), catchAsync(updateDriverById));
 

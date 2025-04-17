@@ -100,46 +100,26 @@ const driverValidationSchema = Joi.object({
   driverProfilePic: Joi.object({
     url: Joi.string().uri().allow(""),
     filename: Joi.string().allow(""),
-  }).optional(),
+  }),
 
   driverCnicPicFront: Joi.object({
-    url: Joi.string().uri().required().messages({
-      "string.uri": "CNIC front image must be a valid URL",
-      "any.required": "CNIC front image is required",
-    }),
-    filename: Joi.string().required().messages({
-      "any.required": "CNIC front image filename is required",
-    }),
+    url: Joi.string().uri().allow(""),
+    filename: Joi.string().allow(""),
   }),
 
   driverCnicPicBack: Joi.object({
-    url: Joi.string().uri().required().messages({
-      "string.uri": "CNIC back image must be a valid URL",
-      "any.required": "CNIC back image is required",
-    }),
-    filename: Joi.string().required().messages({
-      "any.required": "CNIC back image filename is required",
-    }),
+    url: Joi.string().uri().allow(""),
+    filename: Joi.string().allow(""),
   }),
 
   driverLicensePicFront: Joi.object({
-    url: Joi.string().uri().required().messages({
-      "string.uri": "License front image must be a valid URL",
-      "any.required": "License front image is required",
-    }),
-    filename: Joi.string().required().messages({
-      "any.required": "License front image filename is required",
-    }),
+    url: Joi.string().uri().allow(""),
+    filename: Joi.string().allow(""),
   }),
 
   driverLicensePicBack: Joi.object({
-    url: Joi.string().uri().required().messages({
-      "string.uri": "License back image must be a valid URL",
-      "any.required": "License back image is required",
-    }),
-    filename: Joi.string().required().messages({
-      "any.required": "License back image filename is required",
-    }),
+    url: Joi.string().uri().allow(""),
+    filename: Joi.string().allow(""),
   }),
 
   // Decline Reasons
