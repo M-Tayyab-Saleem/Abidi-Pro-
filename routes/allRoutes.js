@@ -82,15 +82,19 @@ const {
 
 const {
   createUser,
-  getAllUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
   signIn,
   verifyOtp,
   resendOtp,
   logout,
 } = require("../controllers/UserManagment/auth");
+
+const {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getCurrentUser,
+} = require("../controllers/UserManagment/User");
 
 const {
   driverValidationSchema,

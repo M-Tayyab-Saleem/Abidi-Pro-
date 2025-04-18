@@ -7,6 +7,7 @@ require("./conn/conn");
 const app = express();
 const { ExpressError } = require("./utils/ExpressError");
 const cookieParser = require("cookie-parser");
+const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 
 // Import the cron job from utils
 require("./utils/cronScheduler");  // This will execute the cron job when server starts
@@ -30,6 +31,7 @@ app.get('/', (req, res) => {
 
 app.use("/api/viaRide", allRoutes);
 app.use("/api/viaRide/app", userRoutes);
+app.use(refreshTokenMiddleware);
 
 
 app.all("*", (req, res, next) => {

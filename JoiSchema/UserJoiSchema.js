@@ -58,7 +58,13 @@ const userSchema = Joi.object({
     .pattern(/^[0-9a-fA-F]{24}$/)
     .messages({
       'string.pattern.base': 'Invalid trip ID format'
-    })
+    }),
+    passwordResetToken: Joi.string(),
+    
+    passwordResetExpires: Joi.date().messages({
+      'date.base': 'Invalid passwordResetExpires expiration date'
+    }),
+    refreshToken: Joi.string(),
 });
 
 

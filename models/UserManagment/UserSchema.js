@@ -34,6 +34,16 @@ const userSchema = new mongoose.Schema(
     assignedTrip: {
       type: String,
     },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpires: {
+      type: Date,
+    },
+    refreshToken: {
+      type: String,
+      select: false
+    },
   },
   { timestamps: true }
 );

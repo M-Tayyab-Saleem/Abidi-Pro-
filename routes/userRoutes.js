@@ -11,14 +11,18 @@ const { restrictTo } = require("../middlewares/roleMiddleware");
 // Import controllers
 const {
   createUser,
-  getUserById,
-  updateUser,
-  deleteUser,
   signIn,
   verifyOtp,
   resendOtp,
   logout,
 } = require("../controllers/UserManagment/auth");
+
+const {
+  getUserById,
+  updateUser,
+  deleteUser,
+  getCurrentUser,
+} = require("../controllers/UserManagment/User");
 
 const {
   createVehicle,
@@ -67,6 +71,9 @@ const {
 const tripValidationSchema = require("../JoiSchema/TripsJoiSchema");
 const validateRequest = require("../middlewares/validateRequest");
 const { vehicleValidateSchema, vehicleUpdateValidate } = require("../JoiSchema/VehicleJoiSchema");
+const { resetPasswordSchema } = require("../JoiSchema/resetPasswordSchema");
+const { forgotPassword, resetPassword, verifyResetToken } = require("../controllers/UserManagment/auth");
+const { refreshToken } = require("../controllers/UserManagment/auth");
 
 
 
@@ -128,5 +135,14 @@ router.put("/vehicle-put-values/:id", isLoggedIn, restrictTo('admin', 'dispatche
 router.get("/available-vehicles", isLoggedIn, catchAsync(getAllVehicles));
 router.get("/vehicle/:id", isLoggedIn, catchAsync(getVehicleById));
 router.get("/vehicle-availability", isLoggedIn, catchAsync(getVehicleAvailability));
+
+
+// Forgot password routes
+router.post("/forgot-password", catchAsync(forgotPassword));
+router.post("/reset-password/:token", validateRequest(resetPasswordSchema), catchAsync(resetPassword));
+router.get("/verify-reset-token/:token", catchAsync(verifyResetToken));
+router.post("/refresh-token", catchAsync(refreshToken));
+
+
 
 module.exports = router;
