@@ -1,6 +1,7 @@
 const { ExpressError, BadRequestError } = require("../utils/ExpressError");
 
 const globalErrorHandler = (err, req, res, next) => {
+  
 
     if (err.name === "ValidationError") {
       const message = Object.values(err.errors)

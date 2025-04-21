@@ -138,8 +138,6 @@ const createUser = async (req, res) => {
     },
     token,
   });
-
-  res.status(200).json({ user });
 };
 
 // Signin route

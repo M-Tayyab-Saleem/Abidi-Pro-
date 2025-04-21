@@ -16,7 +16,10 @@ const PORT = process.env.PORT || 1000;
 
 const allRoutes = require("./routes/allRoutes");
 const userRoutes = require("./routes/userRoutes");
+const webRoutes = require("./routes/viaWebRoutesMount");
+const appRoutes = require("./routes/viaAppRoutesMount");
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
+
 
 app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
@@ -31,6 +34,8 @@ app.get('/', (req, res) => {
 
 app.use("/api/viaRide", allRoutes);
 app.use("/api/viaRide/app", userRoutes);
+app.use("/api/web", webRoutes);
+app.use("/api/app", appRoutes);
 app.use(refreshTokenMiddleware);
 
 
