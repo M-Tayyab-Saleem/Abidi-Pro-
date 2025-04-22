@@ -25,11 +25,11 @@ const userSchema = Joi.object({
       'any.required': 'Password is required'
     }),
 
-  role: Joi.string()
-    .valid('admin', 'dispatcher', 'driver', 'passenger', 'accountant')
-    .messages({
-      'any.only': 'Invalid role specified'
-    }),
+  role: Joi.string(),
+    // .valid('admin', 'dispatcher', 'driver', 'passenger', 'accountant')
+    // .messages({
+    //   'any.only': 'Invalid role specified'
+    // }),
 
   otp: Joi.string()
     .length(6)

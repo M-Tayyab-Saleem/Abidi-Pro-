@@ -134,12 +134,12 @@ router.get("/driver-requestion-form", isLoggedIn, catchAsync(getAllDrivers));
 router.get("/driver-requestion-form/:id", isLoggedIn, catchAsync(getDriverById));
 
 // Log Routes
-router.post("/log", isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createLog));
-router.post("/info", isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createInfoLog));
-router.post("/error", isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createErrorLog));
-router.post("/warn", isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createWarnLog));
-router.post("/debug", isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createDebugLog));
-router.get("/logs", isLoggedIn, restrictTo('admin'), catchAsync(getAllLogs));
+router.post("/log",  validateRequest(logValidationSchema), catchAsync(createLog));
+router.post("/info",  validateRequest(logValidationSchema), catchAsync(createInfoLog));
+router.post("/error",  validateRequest(logValidationSchema), catchAsync(createErrorLog));
+router.post("/warn",  validateRequest(logValidationSchema), catchAsync(createWarnLog));
+router.post("/debug",  validateRequest(logValidationSchema), catchAsync(createDebugLog));
+router.get("/logs", catchAsync(getAllLogs));
 
 // Trip Routes
 router.post("/trips-posting-values", isLoggedIn, restrictTo('admin', 'dispatcher'), validateRequest(tripValidationSchema), catchAsync(post));

@@ -67,7 +67,7 @@ const generateRefreshToken = (user) => {
 
 // Create a new user
 const createUser = async (req, res) => {
-  const { email, name, password } = req.body;
+  const { email, name, password, role } = req.body;
 
   validatePassword(password);
   const hashpassword = bcrypt.hashSync(password);
@@ -76,15 +76,13 @@ const createUser = async (req, res) => {
   if (userExists) {
     throw new BadRequestError("User already exists");
   }
-
-  const role = req.body.role?.toLowerCase();
-
+;
   let prefix = "";
-  if (role === "admin") {
+  if (role === "admin" || role === "Admin") {
     prefix = "RideAD";
-  } else if (role === "accountant") {
+  } else if (role === "accountant" || role === "Accountant") {
     prefix = "RideAC";
-  } else if (role === "dispatcher") {
+  } else if (role === "dispatcher" || role === "Dispatcher") {
     prefix = "RideD";
   }
 
