@@ -6,7 +6,7 @@ const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const logValidationSchema = require("../../JoiSchema/LogJoiSchema");
 
-// Import controllers
+
 const {
   createLog,
   createInfoLog,
@@ -16,7 +16,7 @@ const {
   getAllLogs,
 } = require("../../controllers/Logs/LogController");
 
-// Log routes
+
 router.route("/")
   .get(isLoggedIn, restrictTo('admin'), catchAsync(getAllLogs))
   .post(isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createLog));

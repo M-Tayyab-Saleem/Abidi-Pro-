@@ -18,7 +18,7 @@ const passengerSchema = Joi.object({
   
   passengerEmail: Joi.string()
     .email()
-    .allow("") // Optional field
+    .allow("") 
     .messages({
       "string.email": "Please enter a valid email address",
     }),
@@ -26,7 +26,7 @@ const passengerSchema = Joi.object({
   passengerRide: Joi.number()
     .integer()
     .min(0)
-    .allow(null) // Optional field
+    .allow(null) 
     .messages({
       "number.base": "Ride count must be a number",
       "number.integer": "Ride count must be an integer",
@@ -35,7 +35,7 @@ const passengerSchema = Joi.object({
 
   passengerGender: Joi.string()
     .valid("Male", "Female", "Other", "Prefer not to say")
-    .allow("") // Optional field
+    .allow("") 
     .messages({
       "any.only": "Gender must be Male, Female, Other, or Prefer not to say",
     }),
@@ -43,7 +43,7 @@ const passengerSchema = Joi.object({
   passengerCardNumber: Joi.number()
     .integer()
     .positive()
-    .allow(null) // Optional field
+    .allow(null) 
     .messages({
       "number.base": "Card number must be a valid number",
       "number.integer": "Card number must be an integer",
@@ -51,7 +51,7 @@ const passengerSchema = Joi.object({
     }),
 });
 
-// For partial updates (PATCH requests)
+
 const passengerUpdateSchema = passengerSchema.fork(
   ['passengerName', 'passengerContact'],
   schema => schema.optional()

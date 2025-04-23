@@ -1,7 +1,6 @@
 const Trips = require("../../models/Trips/TripsSchema");
 const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
 
-// POST: Create a new Trip
 const post = async (req, res) => {
   const {
     tripPassanger,

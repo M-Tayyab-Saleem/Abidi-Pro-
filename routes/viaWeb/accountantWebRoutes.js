@@ -6,7 +6,7 @@ const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const { userSchema, userUpdateSchema } = require("../../JoiSchema/UserJoiSchema");
 
-// Import controllers
+
 const {
   postAccountant,
   getAccountant,
@@ -15,7 +15,7 @@ const {
   removeAccountant,
 } = require("../../controllers/UserManagment/accountant");
 
-// Accountant routes
+
 router.route("/")
   .post(isLoggedIn, restrictTo('admin'), validateRequest(userSchema), catchAsync(postAccountant))
   .get(isLoggedIn, restrictTo('admin', 'accountant'), catchAsync(getAccountant));

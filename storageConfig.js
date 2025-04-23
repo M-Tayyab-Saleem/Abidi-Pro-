@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
     },
 });
 
-// Create separate storage instances for different upload needs if needed
+
 const driverDocsStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -24,7 +24,6 @@ const driverDocsStorage = new CloudinaryStorage({
     },
 });
 
-// Create separate storage instances for different upload needs if needed
 const vehicleDocsStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {

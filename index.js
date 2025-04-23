@@ -9,8 +9,8 @@ const { ExpressError } = require("./utils/ExpressError");
 const cookieParser = require("cookie-parser");
 const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 
-// Import the cron job from utils
-require("./utils/cronScheduler");  // This will execute the cron job when server starts
+
+require("./utils/cronScheduler");  
 const PORT = process.env.PORT || 1000;
 
 

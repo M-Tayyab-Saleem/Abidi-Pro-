@@ -1,4 +1,3 @@
-// resetPasswordJoiSchema.js
 const Joi = require('joi');
 
 const resetPasswordSchema = Joi.object({

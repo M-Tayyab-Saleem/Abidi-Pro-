@@ -6,7 +6,7 @@ const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const { userSchema, userUpdateSchema } = require("../../JoiSchema/UserJoiSchema");
 
-// Import controllers
+
 const {
   createDispatcher,
   getAllDispatchers,
@@ -15,7 +15,6 @@ const {
   deleteDispatcher,
 } = require("../../controllers/UserManagment/dispatacher");
 
-// Dispatcher routes
 router.route("/")
   .post(isLoggedIn, restrictTo('admin'), validateRequest(userSchema), catchAsync(createDispatcher))
   .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllDispatchers));

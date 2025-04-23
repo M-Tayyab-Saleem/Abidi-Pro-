@@ -6,7 +6,7 @@ const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const { vehicleValidateSchema } = require("../../JoiSchema/VehicleJoiSchema");
 
-// Import controllers
+
 const {
   createVehicle,
   getAllVehicles,
@@ -25,7 +25,7 @@ const {
   postDeclineOrResubmitVehicle,
 } = require("../../controllers/VehicleManagment/VehicleDetails");
 
-// Vehicle routes
+
 router.route("/")
   .post(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(createVehicle))
   .get(isLoggedIn, catchAsync(getAllVehicles));
@@ -38,7 +38,7 @@ router.route("/:id")
   .put(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(updateVehicle))
   .delete(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(deleteVehicle));
 
-// Vehicle details routes
+
 router.route("/details")
   .get(isLoggedIn, catchAsync(getAllVehiclesDetails));
 

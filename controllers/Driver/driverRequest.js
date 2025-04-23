@@ -3,7 +3,6 @@ const { NotFoundError } = require("../../utils/ExpressError");
 const Vehicle = require("../../models/UserManagment/VehicleSchema");
 
 
-// PATCH/PUT: Create or Update a Driver
 const createOrUpdateDriver = async (req, res) => {
   const { id } = req.params;
   const { driverDeclineReason, driverReSubmit } = req.body;

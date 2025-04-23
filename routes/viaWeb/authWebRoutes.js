@@ -5,7 +5,7 @@ const { isLoggedIn } = require("../../middlewares/authMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const { userSchema } = require("../../JoiSchema/UserJoiSchema");
 
-// Import controllers
+
 const {
   createUser,
   signIn,
@@ -14,7 +14,7 @@ const {
   logout,
 } = require("../../controllers/UserManagment/auth");
 
-// Auth routes - Public routes
+
 router.route("/signup")
   .post(validateRequest(userSchema), catchAsync(createUser));
 
@@ -27,7 +27,6 @@ router.route("/verify-otp")
 router.route("/resend-otp")
   .post(catchAsync(resendOtp));
 
-// Auth routes - Protected routes
 router.route("/logout")
   .post(isLoggedIn, catchAsync(logout));
 

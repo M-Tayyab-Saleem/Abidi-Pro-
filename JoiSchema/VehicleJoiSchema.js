@@ -8,7 +8,7 @@ const vehicleValidateSchema = Joi.object({
         'string.pattern.base': 'Invalid driver ID format'
       }),
 
-  vehicleID: Joi.string().optional(), // Auto-generated, so not required in input
+  vehicleID: Joi.string().optional(), 
   
   make: Joi.string().required().messages({
     'string.empty': 'Make is required',
@@ -26,7 +26,7 @@ const vehicleValidateSchema = Joi.object({
   }),
   
   year: Joi.string()
-    .pattern(/^(19|20)\d{2}$/) // Validates years between 1900-2099
+    .pattern(/^(19|20)\d{2}$/) // between 1900-2099
     .required()
     .messages({
       'string.pattern.base': 'Please enter a valid year (1900-2099)',

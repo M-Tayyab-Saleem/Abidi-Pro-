@@ -68,7 +68,7 @@ const userSchema = Joi.object({
 });
 
 
-// For PATCH requests (partial updates)
+
 const userUpdateSchema = userSchema.fork(
   ['email', 'password', 'otp', 'otpExpires', 'customId'],
   schema => schema.optional()

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-// Import route modules
+
 const authRoutes = require("./viaWeb/authWebRoutes");
 const userRoutes = require("./viaWeb/userWebRoutes");
 const driverRoutes = require("./viaWeb/driverWebRoutes");
@@ -12,7 +12,6 @@ const dispatcherRoutes = require("./viaWeb/dispatcherWebRoutes");
 const passengerRoutes = require("./viaWeb/passengerWebRoutes");
 const vehicleRoutes = require("./viaWeb/vehicleWebRoutes");
 
-// Mount routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/drivers", driverRoutes);

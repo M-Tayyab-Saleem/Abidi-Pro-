@@ -6,7 +6,7 @@ const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const { driverValidationSchema, driverUpdateSchema } = require("../../JoiSchema/DriverJoiSchema");
 
-// Import controllers
+
 const {
   getAllDrivers,
   getDriverById,
@@ -27,14 +27,14 @@ const {
   updateDeclineOrResubmit,
 } = require("../../controllers/UserManagment/userDriver");
 
-// All drivers routes
+
 router.route("/all")
   .get(isLoggedIn, catchAsync(getAllDrivers));
 
 router.route("/all/:id")
   .get(isLoggedIn, catchAsync(getDriverById));
 
-// Driver requests routes
+
 router.route("/requests")
   .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllDriverRequests));
 
@@ -42,7 +42,7 @@ router.route("/requests/:id")
   .get(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(getDriverRequestById))
   .post(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(createOrUpdateDriver));
 
-// Driver management routes
+
 router.route("/")
   .post(
     isLoggedIn, 
@@ -62,7 +62,7 @@ router.route("/:id")
   )
   .delete(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(deleteDriverById));
 
-// Driver status update route
+
 router.route("/status/:id")
   .post(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(updateDeclineOrResubmit));
 

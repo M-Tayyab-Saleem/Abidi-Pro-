@@ -33,14 +33,12 @@ const createDriver = async (req, res) => {
     throw new BadRequestError('Driver with these details already exists');
   }
 
-  // Generate driver ID
   const prefix = "RideDr";
   const count = await Driver.countDocuments();
   const nextNumber = count + 1;
   const paddedNumber = String(nextNumber).padStart(3, "0");
   const driverID = prefix + paddedNumber;
 
-  // Process uploaded files
   const driverProfilePic = req.files?.driverProfilePic?.[0] ? {
     url: req.files.driverProfilePic[0].path,
     filename: req.files.driverProfilePic[0].filename

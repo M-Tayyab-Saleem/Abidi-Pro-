@@ -1,13 +1,11 @@
 const User = require("../../models/UserManagment/UserSchema");
 const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
 
-// Get all users
 const getAllUsers = async (req, res) => {
   const users = await User.find({}).sort({ createdAt: -1 });
   res.status(200).json(users);
 };
 
-// Get specific user by ID
 const getUserById = async (req, res) => {
   const { id } = req.params;
   const user = await User.findById(id);
@@ -17,7 +15,6 @@ const getUserById = async (req, res) => {
   res.status(200).json(user);
 };
 
-// Update user
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, email, role } = req.body;
@@ -41,7 +38,6 @@ const updateUser = async (req, res) => {
   });
 };
 
-// Delete user
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   const user = await User.findByIdAndDelete(id);
@@ -51,7 +47,6 @@ const deleteUser = async (req, res) => {
   res.status(200).json({ message: "User deleted successfully" });
 };
 
-// Get current user profile
 const getCurrentUser = async (req, res) => {
   const user = await User.findById(req.user.id, "-password -otp -otpExpires");
 

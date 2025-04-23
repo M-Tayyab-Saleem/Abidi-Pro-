@@ -1,7 +1,7 @@
 const Accountant = require("../../models/UserManagment/UserSchema");
 const { NotFoundError } = require('../../utils/ExpressError');
 
-// GET: All Accountants
+
 const getAccountant = async (req, res) => {
   const accountant = await Accountant.find({ 
     $or: [
@@ -12,7 +12,7 @@ const getAccountant = async (req, res) => {
   res.status(200).json(accountant);
 };
 
-// GET: Specific Accountant by ID
+
 const getAccountantById = async (req, res) => {
   const { id } = req.params;
   const accountant = await Accountant.findById(id);
@@ -22,7 +22,7 @@ const getAccountantById = async (req, res) => {
   res.status(200).json(accountant);
 };
 
-// PUT: Update Accountant
+
 const updateAccountant = async (req, res) => {
   const { id } = req.params;
   const { name, email, contact, role, customId, assignedTrip } = req.body;
@@ -40,7 +40,7 @@ const updateAccountant = async (req, res) => {
   res.json(accountant);
 };
 
-// DELETE: Delete Accountant
+
 const removeAccountant = async (req, res) => {
   const { id } = req.params;
   const accountant = await Accountant.findByIdAndDelete(id);

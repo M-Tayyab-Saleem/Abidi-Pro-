@@ -9,7 +9,7 @@ const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 const { passengerUpdateSchema } = require("../../JoiSchema/PassengerJoiSchema");
 
-// Import controllers
+
 const {
   createPassenger,
   getAllPassengers,
@@ -18,7 +18,6 @@ const {
   deletePassenger,
 } = require("../../controllers/UserManagment/userPassenger");
 
-// Passenger routes
 router.route("/")
   .post(
     isLoggedIn, 

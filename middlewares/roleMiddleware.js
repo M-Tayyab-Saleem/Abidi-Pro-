@@ -1,7 +1,7 @@
 const { ForbiddenError } = require('../utils/ExpressError');
 const { error } = require('../utils/logger');
 
-// Middleware to restrict access based on roles
+
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
