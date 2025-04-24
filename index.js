@@ -36,7 +36,7 @@ app.use("/api/viaRide", allRoutes);
 app.use("/api/viaRide/app", userRoutes);
 app.use("/api/web", webRoutes);
 app.use("/api/app", appRoutes);
-app.use(refreshTokenMiddleware);
+// app.use(refreshTokenMiddleware);
 
 
 app.all("*", (req, res, next) => {
