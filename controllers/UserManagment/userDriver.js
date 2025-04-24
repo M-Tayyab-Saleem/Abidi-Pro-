@@ -1,23 +1,39 @@
 const Driver = require("../../models/UserManagment/DriverSchema");
 const Vehicle = require("../../models/UserManagment/VehicleSchema");
 const { NotFoundError, BadRequestError } = require('../../utils/ExpressError');
+const getCurrentDate = require('../../utils/getCurrentDate');
+
+
+function getAgeFromDOB(dob) {
+  const [day, month, year] = dob.split("-").map(Number);
+
+  const birthDate = new Date(year, month - 1, day);
+  const today = new Date();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age--;
+  }
+  return age;
+}
 
 const createDriver = async (req, res) => {
   const {
     driverName,
     driverContact,
     driverEarning,
-    driverJoiningDate,
-    driverAge,
     driverGender,
     driverRating,
     driverCnic,
-    driverCardNumber,
+    driverLicenseNumber,
+    driverAccountNumber,
     driverTotalTrips,
     driverEmail,
-    driverCity,
     driverBankName,
-    driverIban,
     driverBirthDate,
   } = req.body;
 
@@ -70,6 +86,9 @@ const createDriver = async (req, res) => {
     throw new BadRequestError('All required documents (CNIC front/back, License front/back) must be uploaded');
   }
 
+  const driverJoiningDate = getCurrentDate(); 
+  const driverAge = getAgeFromDOB(driverBirthDate);
+
   // Create new driver
   const newDriver = new Driver({
     driverID,
@@ -81,12 +100,11 @@ const createDriver = async (req, res) => {
     driverGender,
     driverRating,
     driverCnic,
-    driverCardNumber,
+    driverLicenseNumber,
+    driverAccountNumber,
     driverTotalTrips,
     driverEmail,
-    driverCity,
     driverBankName,
-    driverIban,
     driverBirthDate,
     driverProfilePic,
     driverCnicPicFront,
@@ -125,7 +143,8 @@ const updateDriverById = async (req, res) => {
     driverContact,
     driverAge,
     driverCnic,
-    driverCardNumber,
+    driverAccountNumber,
+    driverLicenseNumber
   } = req.body;
 
   const updatedDriver = await Driver.findByIdAndUpdate(
@@ -136,7 +155,8 @@ const updateDriverById = async (req, res) => {
       driverContact,
       driverAge,
       driverCnic,
-      driverCardNumber,
+      driverAccountNumber,
+      driverLicenseNumber
     },
     { new: true }
   );

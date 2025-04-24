@@ -1,21 +1,21 @@
 const Joi = require('joi');
-const mongoose = require('mongoose');
 
 const vehicleValidateSchema = Joi.object({
-  driverId:  Joi.string()
-      .pattern(/^[0-9a-fA-F]{24}$/)
-      .messages({
-        'string.pattern.base': 'Invalid driver ID format'
-      }),
+  driverId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .allow(null, '')
+    .messages({
+      'string.pattern.base': 'Invalid driver ID format'
+    }),
 
-  vehicleID: Joi.string().optional(), 
+  vehicleID: Joi.string().optional(),
   
-  make: Joi.string().required().messages({
+  model: Joi.string().required().messages({
     'string.empty': 'Make is required',
     'any.required': 'Make is required'
   }),
   
-  carType: Joi.string().required().messages({
+  vehicleType: Joi.string().required().messages({
     'string.empty': 'Car type is required',
     'any.required': 'Car type is required'
   }),
@@ -26,7 +26,7 @@ const vehicleValidateSchema = Joi.object({
   }),
   
   year: Joi.string()
-    .pattern(/^(19|20)\d{2}$/) // between 1900-2099
+    .pattern(/^(19|20)\d{2}$/)
     .required()
     .messages({
       'string.pattern.base': 'Please enter a valid year (1900-2099)',
@@ -45,44 +45,55 @@ const vehicleValidateSchema = Joi.object({
       'any.required': 'License plate number is required'
     }),
   
-    feul: Joi.string().valid('petrol', 'diesel', 'electric', 'hybrid', 'cng')
+  chassisNo: Joi.string()
     .required()
     .messages({
-      'any.only': 'Fuel type must be one of petrol, diesel, electric, hybrid, or cng',
-      'any.required': 'Fuel type is required'
+      'string.empty': 'Chassis number is required',
+      'any.required': 'Chassis number is required'
     }),
   
   seat: Joi.string()
-    .pattern(/^[2-9]$/) // Validates 2-9 seats
+    .pattern(/^[2-9]$/)
+    .allow(null, '')
     .optional()
     .messages({
       'string.pattern.base': 'Seats must be a number between 2-9'
     }),
   
-  transmission: Joi.string().valid('automatic', 'manual')
-    .optional()
-    .messages({
-      'any.only': 'Transmission must be automatic or manual'
-    }),
+  vehicleDeclineReason: Joi.string().allow(null, ''),
+  vehicleReSubmit: Joi.string().allow(null, ''),
   
-  vehicleDeclineReason: Joi.string().optional(),
-  vehicleReSubmit: Joi.string().optional(),
+  vehicleFrontImage: Joi.object({
+    url: Joi.string().uri().required(),
+    filename: Joi.string().required()
+  }),
+  
+  vehicleBackImage: Joi.object({
+    url: Joi.string().uri().required(),
+    filename: Joi.string().required()
+  }),
+  
+  vehicleRightImage: Joi.object({
+    url: Joi.string().uri().required(),
+    filename: Joi.string().required()
+  }),
+  
+  vehicleLeftImage: Joi.object({
+    url: Joi.string().uri().required(),
+    filename: Joi.string().required()
+  }),
   
   vehicleRegistrationBookFront: Joi.object({
-      url: Joi.string().uri().allow(""),
-      filename: Joi.string().allow(""),
+    url: Joi.string().uri().required(),
+    filename: Joi.string().required()
+  }),
+  
+  driver: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .allow(null)
+    .messages({
+      'string.pattern.base': 'Invalid driver ID format'
     }),
-  
-  vehicleInsurance: Joi.object({
-    url: Joi.string().uri().allow(''),
-    filename: Joi.string().allow('')
-  }).optional(),
-  
-  driver:  Joi.string()
-      .pattern(/^[0-9a-fA-F]{24}$/)
-      .messages({
-        'string.pattern.base': 'Invalid driver ID format'
-      }),
   
   status: Joi.string()
     .valid('available', 'assigned', 'maintenance', 'pending')
@@ -94,17 +105,21 @@ const vehicleValidateSchema = Joi.object({
 
 // Conditional validation for when status changes to 'available'
 const vehicleUpdateValidate = (data, status) => {
-  const schema = vehicleJoiSchema;
+  const schema = vehicleValidateSchema;
   
   if (status === 'available') {
     return schema.fork([
-      'make',
-      'carType',
+      'model',
+      'vehicleType',
       'color',
       'year',
       'owner',
       'licensePlateNo',
-      'feul',
+      'chassisNo',
+      'vehicleFrontImage',
+      'vehicleBackImage',
+      'vehicleRightImage',
+      'vehicleLeftImage',
       'vehicleRegistrationBookFront'
     ], (field) => field.required()).validate(data);
   }

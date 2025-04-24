@@ -9,11 +9,11 @@ const vehicleSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    make: {
+    model: {
       type: String,
       required: true,
     },
-    carType: {
+    vehicleType: {
       type: String,
       required: true,
     },
@@ -34,14 +34,11 @@ const vehicleSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    feul: {
+    chassisNo: {
       type: String,
       required: true,
     },
     seat: {
-      type: String,
-    },
-    transmission: {
       type: String,
     },
     vehicleDeclineReason: {
@@ -50,13 +47,25 @@ const vehicleSchema = new mongoose.Schema(
     vehicleReSubmit: {
       type: String,
     },
-    vehicleRegistrationBookFront: {
+    vehicleFrontImage: {
       url: { type: String, required: true },
       filename: { type: String, required: true },
     },
-    vehicleInsurance: {
-      url: String,
-      filename: String,
+    vehicleBackImage: {
+      url: { type: String, required: true },
+      filename: { type: String, required: true },
+    },
+    vehicleRightImage: {
+      url: { type: String, required: true },
+      filename: { type: String, required: true },
+    },
+    vehicleLeftImage: {
+      url: { type: String, required: true },
+      filename: { type: String, required: true },
+    },
+    vehicleRegistrationBookFront: {
+      url: { type: String, required: true },
+      filename: { type: String, required: true },
     },
     driver: {
       type: mongoose.Schema.Types.ObjectId,

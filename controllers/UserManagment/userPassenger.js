@@ -1,33 +1,35 @@
 const Passenger = require("../../models/UserManagment/PassengerSchema");
 const { NotFoundError, BadRequestError } = require("../../utils/ExpressError");
+const getCurrentDate = require('../../utils/getCurrentDate');
+
 
 
 // create a new passenger
 const createPassenger = async (req, res, next) => {
   const url = req.file.path;
   const filename = req.file.filename;
-  console.log(url, "... ", filename);
   const {
     passengerName,
     passengerContact,
     passengerEmail,
-    passengerRide,
+    passengerTotalRides,
     passengerGender,
-    passengerCardNumber,
   } = req.body;
 
   const passengerExists = await Passenger.findOne({ passengerContact });
   if (passengerExists) {
     return next(new BadRequestError("Passenger with this contact number already exists"));
   }
+ 
+  const passengerJoiningDate = getCurrentDate();
 
   const newPassenger = new Passenger({
     passengerName,
     passengerContact,
     passengerEmail,
-    passengerRide,
+    passengerTotalRides,
     passengerGender,
-    passengerCardNumber,
+    passengerJoiningDate,
   });
 
   newPassenger.passengerImage = {
@@ -73,9 +75,8 @@ const updatePassenger = async (req, res, next) => {
     passengerName,
     passengerContact,
     passengerEmail,
-    passengerRide,
+    passengerTotalRides,
     passengerGender,
-    passengerCardNumber,
   } = req.body;
 
   const updatedPassenger = await Passenger.findByIdAndUpdate(
@@ -84,9 +85,8 @@ const updatePassenger = async (req, res, next) => {
       passengerName,
       passengerContact,
       passengerEmail,
-      passengerRide,
-      passengerGender,
-      passengerCardNumber,
+      passengerTotalRides,
+      passengerGender
     },
     { new: true }
   );

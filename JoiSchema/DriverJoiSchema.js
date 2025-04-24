@@ -26,9 +26,12 @@ const driverValidationSchema = Joi.object({
       "string.pattern.base": "Earnings must be a valid number",
     }),
 
-  driverJoiningDate: Joi.date().iso().messages({
-    "date.base": "Invalid date format (use YYYY-MM-DD)",
-  }),
+    driverJoiningDate: Joi.string()
+    .pattern(/^\d{2}-\d{2}-\d{4}$/)
+    .messages({
+      "string.pattern.base": "Invalid date format (use DD-MM-YYYY)",
+      "string.base": "Date must be a string",
+    }),
 
   driverAge: Joi.string()
     .pattern(/^[1-9][0-9]?$/) // 1-99
@@ -54,9 +57,23 @@ const driverValidationSchema = Joi.object({
       "any.required": "CNIC is required",
     }),
 
-  driverCardNumber: Joi.string().creditCard().messages({
-    "string.creditCard": "Invalid card number",
-  }),
+    driverLicenseNumber: Joi.string()
+    .pattern(/^[A-Z]{3}-\d{7}$/)
+    .required()
+    .messages({
+      "string.pattern.base": "Invalid license format (use CITYCODE-1234567, e.g., LHR-1234567)",
+      "string.base": "License number must be a string",
+      "any.required": "Driver license number is required",
+    }),
+
+    driverAccountNumber: Joi.string()
+    .pattern(/^03[0-9]{9}$/)
+    .required()
+    .messages({
+      "string.pattern.base": "Invalid mobile account number (must be 11 digits starting with 03)",
+      "string.base": "Account number must be a string",
+      "any.required": "Driver account number is required",
+    }),
 
   driverTotalTrips: Joi.string()
     .pattern(/^\d+$/) // Positive integer
@@ -68,28 +85,21 @@ const driverValidationSchema = Joi.object({
     "string.email": "Invalid email format",
   }),
 
-  driverAssignedVehicle: Joi.string()
-    .pattern(/^[0-9a-fA-F]{24}$/)
-    .messages({
-      "string.pattern.base": "Invalid vehicle ID format",
-    }),
-
-  driverCity: Joi.string().max(50).messages({
-    "string.max": "City cannot exceed 50 characters",
-  }),
-
   driverBankName: Joi.string().max(50).messages({
     "string.max": "Bank name cannot exceed 50 characters",
   }),
 
-  driverIban: Joi.string()
-    .pattern(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/) // Basic IBAN pattern
-    .messages({
-      "string.pattern.base": "Invalid IBAN format",
-    }),
+  // driverIban: Joi.string()
+  //   .pattern(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/) // Basic IBAN pattern
+  //   .messages({
+  //     "string.pattern.base": "Invalid IBAN format",
+  //   }),
 
-  driverBirthDate: Joi.date().max("now").messages({
-    "date.max": "Birth date cannot be in the future",
+  driverBirthDate: Joi.string()
+  .pattern(/^\d{2}-\d{2}-\d{4}$/)
+  .messages({
+    "string.pattern.base": "Invalid date format (use DD-MM-YYYY)",
+    "string.base": "Date must be a string",
   }),
 
   lastseen: Joi.date().messages({
@@ -131,7 +141,7 @@ const driverValidationSchema = Joi.object({
   assignedVehicle: Joi.string()
       .pattern(/^[0-9a-fA-F]{24}$/)
       .messages({
-        'string.pattern.base': 'Invalid trip ID format'
+        "string.pattern.base": "Invalid vehicle ID format"
       })
 });
 
@@ -142,7 +152,8 @@ const driverUpdateSchema = driverValidationSchema.fork(
     "driverContact",
     "driverCnic",
     "driverEmail",
-    "driverIban",
+    "driverAccountNumber",
+    "driverLicenseNumber",
     "driverCnicPicFront",
     "driverCnicPicBack",
     "driverLicensePicFront",

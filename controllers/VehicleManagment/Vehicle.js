@@ -2,35 +2,55 @@ const Vehicle = require("../../models/UserManagment/VehicleSchema");
 const Driver = require("../../models/UserManagment/DriverSchema");
 const { NotFoundError, BadRequestError } = require("../../utils/ExpressError");
 
-// Create vehicle
 const createVehicle = async (req, res) => {
   const {
     driverId,
-    make,
-    carType,
+    model,
+    vehicleType,
     color,
     year,
     owner,
     licensePlateNo,
-    feul,
-    seat,
-    transmission,
+    chassisNo
   } = req.body;
 
-  // Process uploaded files
+  
+    if (vehicleType && vehicleType.toLowerCase() === "bike") {
+      seat = "1";
+    } else if (vehicleType && vehicleType.toLowerCase() === "car") {
+      seat = "4";
+    } else if (vehicleType && vehicleType.toLowerCase() === "auto") {
+      seat = "3";
+    }
+
+  const vehicleFrontImage = req.files?.vehicleFrontImage?.[0] ? {
+    url: req.files.vehicleFrontImage[0].path,
+    filename: req.files.vehicleFrontImage[0].filename
+  } : null;
+
+  const vehicleBackImage = req.files?.vehicleBackImage?.[0] ? {
+    url: req.files.vehicleBackImage[0].path,
+    filename: req.files.vehicleBackImage[0].filename
+  } : null;
+
+  const vehicleRightImage = req.files?.vehicleRightImage?.[0] ? {
+    url: req.files.vehicleRightImage[0].path,
+    filename: req.files.vehicleRightImage[0].filename
+  } : null;
+
+  const vehicleLeftImage = req.files?.vehicleLeftImage?.[0] ? {
+    url: req.files.vehicleLeftImage[0].path,
+    filename: req.files.vehicleLeftImage[0].filename
+  } : null;
+
   const vehicleRegistrationBookFront = req.files?.vehicleRegistrationBookFront?.[0] ? {
     url: req.files.vehicleRegistrationBookFront[0].path,
     filename: req.files.vehicleRegistrationBookFront[0].filename
   } : null;
 
-  const vehicleInsurance = req.files?.vehicleInsurance?.[0] ? {
-    url: req.files.vehicleInsurance[0].path,
-    filename: req.files.vehicleInsurance[0].filename
-  } : null;
-
-  // Validate required documents
-  if (!vehicleRegistrationBookFront) {
-    throw new BadRequestError('Vehicle registration book front image is required');
+  if (!vehicleFrontImage || !vehicleBackImage || !vehicleRightImage || 
+      !vehicleLeftImage || !vehicleRegistrationBookFront) {
+    throw new BadRequestError('All vehicle images are required');
   }
 
   if (licensePlateNo) {
@@ -49,22 +69,23 @@ const createVehicle = async (req, res) => {
 
     const newVehicle = new Vehicle({
       vehicleID,
-      make,
-      carType,
+      model,
+      vehicleType,
       color,
       year,
       owner,
       licensePlateNo,
-      feul,
+      chassisNo,
       seat,
-      transmission,
+      vehicleFrontImage,
+      vehicleBackImage,
+      vehicleRightImage,
+      vehicleLeftImage,
       vehicleRegistrationBookFront,
-      vehicleInsurance,
       driver: driverId,
       status: "pending",
     });
 
-    // Update driver's assigned vehicle if driverId provided
     if (driverId) {
       await Driver.findByIdAndUpdate(
         driverId,
@@ -79,6 +100,8 @@ const createVehicle = async (req, res) => {
       vehicle: savedVehicle,
       message: "Vehicle created successfully" 
     });
+  } else {
+    throw new BadRequestError("License plate number is required");
   }
 };
 
@@ -110,11 +133,72 @@ const getVehicleById = async (req, res, next) => {
 //Update vehicle
 const updateVehicle = async (req, res, next) => {
   const { id } = req.params;
-  const { make, carType, color, year, owner, licensePlateNo, feul } = req.body;
+  const { 
+    model, 
+    vehicleType, 
+    color, 
+    year, 
+    owner, 
+    licensePlateNo, 
+    chassisNo,
+    seat,
+    status 
+  } = req.body;
+
+  
+  const updateData = { 
+    model, 
+    vehicleType, 
+    color, 
+    year, 
+    owner, 
+    licensePlateNo, 
+    chassisNo,
+    seat,
+    status 
+  };
+
+
+  if (req.files) {
+    if (req.files.vehicleFrontImage?.[0]) {
+      updateData.vehicleFrontImage = {
+        url: req.files.vehicleFrontImage[0].path,
+        filename: req.files.vehicleFrontImage[0].filename
+      };
+    }
+    
+    if (req.files.vehicleBackImage?.[0]) {
+      updateData.vehicleBackImage = {
+        url: req.files.vehicleBackImage[0].path,
+        filename: req.files.vehicleBackImage[0].filename
+      };
+    }
+    
+    if (req.files.vehicleRightImage?.[0]) {
+      updateData.vehicleRightImage = {
+        url: req.files.vehicleRightImage[0].path,
+        filename: req.files.vehicleRightImage[0].filename
+      };
+    }
+    
+    if (req.files.vehicleLeftImage?.[0]) {
+      updateData.vehicleLeftImage = {
+        url: req.files.vehicleLeftImage[0].path,
+        filename: req.files.vehicleLeftImage[0].filename
+      };
+    }
+    
+    if (req.files.vehicleRegistrationBookFront?.[0]) {
+      updateData.vehicleRegistrationBookFront = {
+        url: req.files.vehicleRegistrationBookFront[0].path,
+        filename: req.files.vehicleRegistrationBookFront[0].filename
+      };
+    }
+  }
 
   const updatedVehicle = await Vehicle.findByIdAndUpdate(
     id,
-    { make, carType, color, year, owner, licensePlateNo, feul },
+    updateData,
     { new: true }
   );
 
@@ -122,7 +206,11 @@ const updateVehicle = async (req, res, next) => {
     return next(new NotFoundError("Vehicle"));
   }
 
-  res.status(200).json(updatedVehicle);
+  res.status(200).json({
+    success: true,
+    vehicle: updatedVehicle,
+    message: "Vehicle updated successfully"
+  });
 };
 
 //Delete vehicle
@@ -134,7 +222,10 @@ const deleteVehicle = async (req, res, next) => {
     return next(new NotFoundError("Vehicle"));
   }
 
-  res.status(200).json({ message: "Vehicle deleted successfully" });
+  res.status(200).json({ 
+    success: true,
+    message: "Vehicle deleted successfully" 
+  });
 };
 
 module.exports = {

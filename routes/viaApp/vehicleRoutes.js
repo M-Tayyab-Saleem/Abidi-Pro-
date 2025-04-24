@@ -7,57 +7,55 @@ const { isLoggedIn } = require("../../middlewares/authMiddleware");
 const { restrictTo } = require("../../middlewares/roleMiddleware");
 const validateRequest = require("../../middlewares/validateRequest");
 
-// Import controllers
 const {
   createVehicle,
   updateVehicle,
   getAllVehicles,
   getVehicleById,
+  deleteVehicle
 } = require("../../controllers/VehicleManagment/Vehicle");
 
 const {
   getVehicleAvailability,
 } = require("../../controllers/VehicleManagment/VehicleAvailability");
 
-// Import validation schemas
 const { 
   vehicleValidateSchema, 
   vehicleUpdateValidate 
 } = require("../../JoiSchema/VehicleJoiSchema");
 
-// Configure multer for vehicle docs
 const uploadVehicleDocs = multer({ 
   storage: vehicleDocsStorage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB per file
-    files: 2 // Maximum 2 files
-  }
 }).fields([
-  { name: 'vehicleRegistrationBookFront', maxCount: 1 },
-  { name: 'vehicleInsurance', maxCount: 1 }
+  { name: 'vehicleFrontImage', maxCount: 1 },
+  { name: 'vehicleBackImage', maxCount: 1 },
+  { name: 'vehicleRightImage', maxCount: 1 },
+  { name: 'vehicleLeftImage', maxCount: 1 },
+  { name: 'vehicleRegistrationBookFront', maxCount: 1 }
 ]);
 
-// Vehicle routes
+
 router.route("/")
   .post(
-    isLoggedIn, 
-    restrictTo('admin', 'dispatcher', 'driver'), 
     uploadVehicleDocs, 
     validateRequest(vehicleValidateSchema), 
     catchAsync(createVehicle)
   )
-  .get(isLoggedIn, catchAsync(getAllVehicles));
+  .get(catchAsync(getAllVehicles));
 
 router.route("/:id")
-  .get(isLoggedIn, catchAsync(getVehicleById))
+  .get(catchAsync(getVehicleById))
   .put(
-    isLoggedIn, 
-    restrictTo('admin', 'dispatcher', 'driver'), 
-    validateRequest(vehicleUpdateValidate), 
+    uploadVehicleDocs,
+    (req, res, next) => {
+      const status = req.body.status;
+      validateRequest((data) => vehicleUpdateValidate(data, status))(req, res, next);
+    },
     catchAsync(updateVehicle)
-  );
+  )
+  .delete(catchAsync(deleteVehicle));
 
 router.route("/availability")
-  .get(isLoggedIn, catchAsync(getVehicleAvailability));
+  .get(catchAsync(getVehicleAvailability));
 
 module.exports = router;

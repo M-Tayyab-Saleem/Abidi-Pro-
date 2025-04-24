@@ -24,6 +24,7 @@ const DriverSchema = new mongoose.Schema(
     driverAge: {
       type: String,
     },
+
     driverGender: {
       type: String,
     },
@@ -34,9 +35,16 @@ const DriverSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    driverCardNumber: {
+    driverLicenseNumber: {
       type: String,
       unique: true,
+    },
+    // driverCardNumber: {
+    //   type: String,
+    //   unique: true,
+    // },
+    driverAccountNumber: {
+      type: String,
     },
     driverTotalTrips: {
       type: String,
@@ -45,16 +53,13 @@ const DriverSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    driverCity: {
-      type: String,
-    },
     driverBankName: {
       type: String,
     },
-    driverIban: {
-      type: String,
-      unique: true,
-    },
+    // driverIban: {
+    //   type: String,
+    //   unique: true,
+    // },
     driverBirthDate: {
       type: String,
     },

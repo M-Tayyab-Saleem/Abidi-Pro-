@@ -13,14 +13,14 @@ const passengerSchema = new mongoose.Schema({
     passengerEmail: {
         type: String
     },
-    passengerRide: {
+    passengerTotalRides: {
         type: Number
     },
     passengerGender: {
         type: String
     },
-    passengerCardNumber: {
-        type: Number
+    passengerJoiningDate: {
+        type: String
     },
     passengerImage: {
         url : String,
