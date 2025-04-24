@@ -18,19 +18,19 @@ const {
 
 
 router.route("/")
-  .get(isLoggedIn, restrictTo('admin'), catchAsync(getAllLogs))
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createLog));
+  .get(/*isLoggedIn, restrictTo('admin'),*/ catchAsync(getAllLogs))
+  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createLog));
 
 router.route("/info")
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createInfoLog));
+  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createInfoLog));
 
 router.route("/error")
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createErrorLog));
+  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createErrorLog));
 
 router.route("/warn")
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createWarnLog));
+  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createWarnLog));
 
 router.route("/debug")
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema), catchAsync(createDebugLog));
+  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createDebugLog));
 
 module.exports = router;

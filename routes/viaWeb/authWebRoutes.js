@@ -16,7 +16,7 @@ const {
 
 
 router.route("/signup")
-  .post(validateRequest(userSchema), catchAsync(createUser));
+  .post(/*validateRequest(userSchema),*/ catchAsync(createUser));
 
 router.route("/signin")
   .post(catchAsync(signIn));
@@ -28,6 +28,6 @@ router.route("/resend-otp")
   .post(catchAsync(resendOtp));
 
 router.route("/logout")
-  .post(isLoggedIn, catchAsync(logout));
+  .post(/*isLoggedIn,*/ catchAsync(logout));
 
 module.exports = router;

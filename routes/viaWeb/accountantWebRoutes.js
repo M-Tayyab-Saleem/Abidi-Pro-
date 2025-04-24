@@ -17,12 +17,12 @@ const {
 
 
 router.route("/")
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(userSchema), catchAsync(postAccountant))
-  .get(isLoggedIn, restrictTo('admin', 'accountant'), catchAsync(getAccountant));
+  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(userSchema),*/ catchAsync(postAccountant))
+  .get(/*isLoggedIn, restrictTo('admin', 'accountant'),*/ catchAsync(getAccountant));
 
 router.route("/:id")
-  .get(isLoggedIn, restrictTo('admin', 'accountant'), catchAsync(getAccountantById))
-  .put(isLoggedIn, restrictTo('admin', 'accountant'), validateRequest(userUpdateSchema), catchAsync(updateAccountant))
-  .delete(isLoggedIn, restrictTo('admin', 'accountant'), catchAsync(removeAccountant));
+  .get(/*isLoggedIn, restrictTo('admin', 'accountant'),*/ catchAsync(getAccountantById))
+  .put(/*isLoggedIn, restrictTo('admin', 'accountant'), validateRequest(userUpdateSchema),*/ catchAsync(updateAccountant))
+  .delete(/*isLoggedIn, restrictTo('admin', 'accountant'),*/ catchAsync(removeAccountant));
 
 module.exports = router;

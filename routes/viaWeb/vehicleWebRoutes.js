@@ -27,25 +27,25 @@ const {
 
 
 router.route("/")
-  .post(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(createVehicle))
-  .get(isLoggedIn, catchAsync(getAllVehicles));
+  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'),*/ catchAsync(createVehicle))
+  .get(/*isLoggedIn,*/ catchAsync(getAllVehicles));
 
 router.route("/availability")
-  .get(isLoggedIn, catchAsync(getVehicleAvailability));
+  .get(/*isLoggedIn,*/ catchAsync(getVehicleAvailability));
 
 router.route("/:id")
-  .get(isLoggedIn, catchAsync(getVehicleById))
-  .put(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(updateVehicle))
-  .delete(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(deleteVehicle));
+  .get(/*isLoggedIn,*/ catchAsync(getVehicleById))
+  .put(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'),*/ catchAsync(updateVehicle))
+  .delete(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(deleteVehicle));
 
 
 router.route("/details")
-  .get(isLoggedIn, catchAsync(getAllVehiclesDetails));
+  .get(/*isLoggedIn,*/ catchAsync(getAllVehiclesDetails));
 
 router.route("/details/:id")
-  .get(isLoggedIn, catchAsync(getVehicleDetailsById));
+  .get(/*isLoggedIn,*/ catchAsync(getVehicleDetailsById));
 
 router.route("/status/:id")
-  .post(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(postDeclineOrResubmitVehicle));
+  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(postDeclineOrResubmitVehicle));
 
 module.exports = router;

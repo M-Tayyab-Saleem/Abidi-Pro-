@@ -17,14 +17,14 @@ const {
 
 
 router.route("/")
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllUsers));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllUsers));
 
 router.route("/current")
-  .get(isLoggedIn, catchAsync(getCurrentUser));
+  .get(/*isLoggedIn,*/ catchAsync(getCurrentUser));
 
 router.route("/:id")
-  .get(isLoggedIn, catchAsync(getUserById))
-  .put(isLoggedIn, validateRequest(userUpdateSchema), catchAsync(updateUser))
-  .delete(isLoggedIn, catchAsync(deleteUser));
+  .get(/*isLoggedIn,*/ catchAsync(getUserById))
+  .put(/*isLoggedIn, validateRequest(userUpdateSchema),*/ catchAsync(updateUser))
+  .delete(/*isLoggedIn,*/ catchAsync(deleteUser));
 
 module.exports = router;

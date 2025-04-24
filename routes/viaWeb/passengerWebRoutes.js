@@ -20,21 +20,21 @@ const {
 
 router.route("/")
   .post(
-    isLoggedIn, 
-    restrictTo('admin', 'dispatcher'), 
+    /*isLoggedIn, 
+    restrictTo('admin', 'dispatcher'), */
     upload.single('passengerImage'), 
     catchAsync(createPassenger)
   )
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllPassengers));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllPassengers));
 
 router.route("/:id")
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher', 'passenger'), catchAsync(getPassengerById))
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'passenger'),*/ catchAsync(getPassengerById))
   .put(
-    isLoggedIn, 
+    /*isLoggedIn, 
     restrictTo('admin', 'dispatcher', 'passenger'), 
-    validateRequest(passengerUpdateSchema), 
+    validateRequest(passengerUpdateSchema),*/ 
     catchAsync(updatePassenger)
   )
-  .delete(isLoggedIn, restrictTo('admin', 'dispatcher', 'passenger'), catchAsync(deletePassenger));
+  .delete(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'passenger'),*/ catchAsync(deletePassenger));
 
 module.exports = router;

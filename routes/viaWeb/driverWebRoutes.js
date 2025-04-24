@@ -29,41 +29,41 @@ const {
 
 
 router.route("/all")
-  .get(isLoggedIn, catchAsync(getAllDrivers));
+  .get(/*isLoggedIn,*/  catchAsync(getAllDrivers));
 
 router.route("/all/:id")
-  .get(isLoggedIn, catchAsync(getDriverById));
+  .get(/*isLoggedIn,*/  catchAsync(getDriverById));
 
 
 router.route("/requests")
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllDriverRequests));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/  catchAsync(getAllDriverRequests));
 
 router.route("/requests/:id")
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(getDriverRequestById))
-  .post(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(createOrUpdateDriver));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'),*/  catchAsync(getDriverRequestById))
+  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/  catchAsync(createOrUpdateDriver));
 
 
 router.route("/")
   .post(
-    isLoggedIn, 
+    /*isLoggedIn, 
     restrictTo('admin', 'dispatcher'), 
-    validateRequest(driverValidationSchema), 
+    validateRequest(driverValidationSchema),*/ 
     catchAsync(createDriver)
   )
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllUserDrivers));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllUserDrivers));
 
 router.route("/:id")
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(getUserDriverById))
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'),*/ catchAsync(getUserDriverById))
   .put(
-    isLoggedIn, 
+    /*isLoggedIn, 
     restrictTo('admin', 'dispatcher', 'driver'), 
-    validateRequest(driverUpdateSchema), 
+    validateRequest(driverUpdateSchema), */
     catchAsync(updateDriverById)
   )
-  .delete(isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'), catchAsync(deleteDriverById));
+  .delete(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'),*/ catchAsync(deleteDriverById));
 
 
 router.route("/status/:id")
-  .post(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(updateDeclineOrResubmit));
+  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher'), */catchAsync(updateDeclineOrResubmit));
 
 module.exports = router;

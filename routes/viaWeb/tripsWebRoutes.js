@@ -14,10 +14,10 @@ const {
 } = require("../../controllers/Trips/trips");
 
 router.route("/")
-  .post(isLoggedIn, restrictTo('admin', 'dispatcher'), validateRequest(tripValidationSchema), catchAsync(post))
-  .get(isLoggedIn, catchAsync(get));
+  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher'), validateRequest(tripValidationSchema),*/ catchAsync(post))
+  .get(/*isLoggedIn,*/ catchAsync(get));
 
 router.route("/:id")
-  .get(isLoggedIn, catchAsync(getById));
+  .get(/*isLoggedIn,*/ catchAsync(getById));
 
 module.exports = router;

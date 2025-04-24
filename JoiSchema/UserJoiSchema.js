@@ -70,7 +70,7 @@ const userSchema = Joi.object({
 
 
 const userUpdateSchema = userSchema.fork(
-  ['email', 'password', 'otp', 'otpExpires', 'customId'],
+  ['email', 'password', 'otp', 'otpExpires', 'customId','contact'],
   schema => schema.optional()
 );
 

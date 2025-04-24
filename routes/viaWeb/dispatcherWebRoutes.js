@@ -8,7 +8,6 @@ const { userSchema, userUpdateSchema } = require("../../JoiSchema/UserJoiSchema"
 
 
 const {
-  createDispatcher,
   getAllDispatchers,
   getDispatcherById,
   updateDispatcher,
@@ -16,12 +15,11 @@ const {
 } = require("../../controllers/UserManagment/dispatacher");
 
 router.route("/")
-  .post(isLoggedIn, restrictTo('admin'), validateRequest(userSchema), catchAsync(createDispatcher))
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getAllDispatchers));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/  catchAsync(getAllDispatchers));
 
 router.route("/:id")
-  .get(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(getDispatcherById))
-  .put(isLoggedIn, restrictTo('admin', 'dispatcher'), validateRequest(userUpdateSchema), catchAsync(updateDispatcher))
-  .delete(isLoggedIn, restrictTo('admin', 'dispatcher'), catchAsync(deleteDispatcher));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/  catchAsync(getDispatcherById))
+  .put(/*isLoggedIn, restrictTo('admin', 'dispatcher'), validateRequest(userUpdateSchema),*/  catchAsync(updateDispatcher))
+  .delete(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/  catchAsync(deleteDispatcher));
 
 module.exports = router;
