@@ -17,7 +17,7 @@ const {
 
 
 router.route("/")
-  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllUsers));
+  .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllUsers))
 
 router.route("/current")
   .get(/*isLoggedIn,*/ catchAsync(getCurrentUser));

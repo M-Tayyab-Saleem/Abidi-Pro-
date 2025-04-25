@@ -11,6 +11,7 @@ const accountantRoutes = require("./viaWeb/accountantWebRoutes");
 const dispatcherRoutes = require("./viaWeb/dispatcherWebRoutes");
 const passengerRoutes = require("./viaWeb/passengerWebRoutes");
 const vehicleRoutes = require("./viaWeb/vehicleWebRoutes");
+const zoneRoutes = require("./viaWeb/zoneWebRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -21,5 +22,6 @@ router.use("/accountants", accountantRoutes);
 router.use("/dispatchers", dispatcherRoutes);
 router.use("/passengers", passengerRoutes);
 router.use("/vehicles", vehicleRoutes);
+router.use("/zone", zoneRoutes);
 
 module.exports = router;
