@@ -1,7 +1,7 @@
 const Accountant = require("../../models/UserManagment/UserSchema");
 const { NotFoundError } = require('../../utils/ExpressError');
 
-
+//accountant controller
 const getAccountant = async (req, res) => {
   const accountant = await Accountant.find({ 
     $or: [
