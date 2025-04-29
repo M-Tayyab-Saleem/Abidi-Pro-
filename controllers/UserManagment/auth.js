@@ -67,7 +67,7 @@ const generateRefreshToken = (user) => {
 
 // Create a new user
 const createUser = async (req, res) => {
-  const { email, name, password, role } = req.body;
+  const { email, name, password, role , contact } = req.body;
 
   validatePassword(password);
   const hashpassword = bcrypt.hashSync(password);
@@ -100,6 +100,7 @@ const createUser = async (req, res) => {
     password: hashpassword,
     role,
     customId,
+    contact,
   });
   await user.save();
 

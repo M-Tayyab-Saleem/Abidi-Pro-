@@ -8,10 +8,7 @@ const { resetPasswordSchema } = require("../../JoiSchema/resetPasswordSchema");
 
 // Import controllers
 const {
-  createUser,
   signIn,
-  verifyOtp,
-  resendOtp,
   logout,
   forgotPassword,
   resetPassword,
@@ -19,12 +16,16 @@ const {
   refreshToken,
 } = require("../../controllers/UserManagment/auth");
 
+const {
+    createUser,
+    verifyOtp,
+    resendOtp,
+} = require("../../controllers/App/auth");
+
 // Auth Routes - Public routes
 router
-  .route("/signup")
-  .post(validateRequest(userSchema), catchAsync(createUser));
-
-router.route("/signin").post(catchAsync(signIn));
+  .route("/signin")
+  .post(catchAsync(createUser));
 
 router.route("/verify-otp").post(catchAsync(verifyOtp));
 

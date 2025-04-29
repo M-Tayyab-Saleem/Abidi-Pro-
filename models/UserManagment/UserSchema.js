@@ -4,15 +4,15 @@ const userSchema = new mongoose.Schema(
   {
     email: {
       type: String,
-      required: true,
-      unique: true,
+      required: false,
+      unique: false,
+      sparse: true, // sparse avoids errors on null
     },
     name: {
       type: String,
     },
     password: {
       type: String,
-      required: true,
       Select : false,
     },
     role: {
@@ -31,9 +31,6 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
     customId: {
-      type: String,
-    },
-    contact: {
       type: String,
     },
     assignedTrip: {

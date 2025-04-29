@@ -22,10 +22,17 @@ const passengerSchema = new mongoose.Schema({
     passengerJoiningDate: {
         type: String
     },
+    passengerHistory:[
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "RideTrip",
+            default: null,
+        }
+    ],
     passengerImage: {
         url : String,
         filename : String
     },
 }, { timestamps: true });
  
-module.exports = mongoose.model('Ride Passenger', passengerSchema);
+module.exports = mongoose.model('RidePassenger', passengerSchema);
