@@ -22,6 +22,9 @@ const passengerSchema = new mongoose.Schema({
     passengerJoiningDate: {
         type: String
     },
+    passengerRating: {
+        type: Number
+    },
     passengerHistory:[
         {
             type: mongoose.Schema.Types.ObjectId,

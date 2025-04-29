@@ -47,9 +47,9 @@ const Trips = new mongoose.Schema({
 
   },
   tripScheduledDate: {
-    type: String,
+    type: Date,
     required: true,
-  },
+  },  
   tripfare: {
     type: String,
     required: true,
@@ -75,11 +75,6 @@ const Trips = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "RideDrivers",
     default: null,
-  },
-  tripVehicleId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Vehicle",
-    default: null,
-  },
+  }
 });
 module.exports = mongoose.model("RideTrip", Trips);

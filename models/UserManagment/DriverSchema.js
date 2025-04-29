@@ -38,10 +38,6 @@ const DriverSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    // driverCardNumber: {
-    //   type: String,
-    //   unique: true,
-    // },
     driverAccountNumber: {
       type: String,
     },
@@ -55,10 +51,6 @@ const DriverSchema = new mongoose.Schema(
     driverBankName: {
       type: String,
     },
-    // driverIban: {
-    //   type: String,
-    //   unique: true,
-    // },
     driverBirthDate: {
       type: String,
     },

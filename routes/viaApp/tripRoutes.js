@@ -8,7 +8,8 @@ const validateRequest = require("../../middlewares/validateRequest");
 const { 
   post, 
   get, 
-  getById 
+  getById ,
+  deleteById,
 } = require("../../controllers/Trips/trips");
 
 // Import validation schemas
@@ -16,10 +17,11 @@ const tripValidationSchema = require("../../JoiSchema/TripsJoiSchema");
 
 // Trip routes
 router.route("/")
-  .post(isLoggedIn, validateRequest(tripValidationSchema), catchAsync(post))
-  .get(isLoggedIn, catchAsync(get));
+  .post(/*isLoggedIn,*/ catchAsync(post))
+  .get(catchAsync(get));
 
 router.route("/:id")
-  .get(isLoggedIn, catchAsync(getById));
+  .get( catchAsync(getById))
+  .delete( catchAsync(deleteById));
 
 module.exports = router;

@@ -15,7 +15,7 @@ const post = async (req, res) => {
     tripVehicleType,
     tripPassengerId,
     tripDriverId,
-    tripVehicleId
+    tripVehicleId,
   } = req.body;
 
   const prefix = "TRP";
@@ -52,7 +52,7 @@ const post = async (req, res) => {
     tripVehicleType,
     tripPassengerId,
     tripDriverId,
-    tripVehicleId
+    tripVehicleId,
   });
 
   const savedTrip = await newTrip.save();
@@ -71,21 +71,20 @@ const post = async (req, res) => {
   res.status(201).json({
     success: true,
     trip: savedTrip,
-    message: "Trip created successfully"
+    message: "Trip created successfully",
   });
 };
 
 // GET: Get all trips
 const get = async (req, res) => {
   const trips = await Trips.find({})
-    .populate('tripPassengerId', 'passengerName passengerContact')
-    .populate('tripDriverId', 'driverName driverContact')
-    .populate('tripVehicleId', 'vehicleNumber vehicleModel')
+    .populate("tripPassengerId", "passengerName passengerContact passengerImage")
+    .populate("tripDriverId", "driverName driverContact driverProfilePic driverRating assignedVehicle driverTotalTrips driverID")
     .sort({ createdAt: -1 });
-    
+
   res.status(200).json({
     success: true,
-    trips
+    trips,
   });
 };
 
@@ -94,9 +93,18 @@ const getById = async (req, res) => {
   const { id } = req.params;
 
   const trip = await Trips.findById(id)
-    .populate('tripPassengerId', 'passengerName passengerContact passengerImage')
-    .populate('tripDriverId', 'driverName driverContact driverProfilePic driver driverRating')
-    .populate('tripVehicleId');
+    .populate(
+      "tripPassengerId",
+      "passengerName passengerContact passengerImage"
+    )
+    .populate({
+      path: "tripDriverId",
+      populate: {
+        path: "assignedVehicle",
+        model: "Vehicle"
+      },
+      select: "driverName driverContact driverProfilePic driverRating assignedVehicle driverTotalTrips driverID"
+    })
     
   if (!trip) {
     throw new NotFoundError("Trip");
@@ -104,7 +112,7 @@ const getById = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    trip
+    trip,
   });
 };
 // DELETE: Delete a trip by ID
@@ -125,26 +133,22 @@ const deleteById = async (req, res) => {
 
   // Update passenger's total rides and remove trip from history
   if (passengerId) {
-    await Passenger.findByIdAndUpdate(
-      passengerId,
-      {
-        $inc: { passengerTotalRides: -1 },
-        $pull: { passengerHistory: id }
-      }
-    );
+    await Passenger.findByIdAndUpdate(passengerId, {
+      $inc: { passengerTotalRides: -1 },
+      $pull: { passengerHistory: id },
+    });
   }
 
   // Update driver's total trips
   if (driverId) {
-    await Driver.findByIdAndUpdate(
-      driverId,
-      { $inc: { driverTotalTrips: -1 } }
-    );
+    await Driver.findByIdAndUpdate(driverId, {
+      $inc: { driverTotalTrips: -1 },
+    });
   }
 
   res.status(200).json({
     success: true,
-    message: "Trip deleted successfully"
+    message: "Trip deleted successfully",
   });
 };
 
@@ -152,5 +156,5 @@ module.exports = {
   post,
   get,
   getById,
-  deleteById
+  deleteById,
 };
