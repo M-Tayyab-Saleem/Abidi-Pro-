@@ -104,24 +104,20 @@ const createUser = async (req, res) => {
   });
   await user.save();
 
-  // Generate tokens
-  const token = generateToken(user);
-  const refreshToken = generateRefreshToken(user);
-
   user.refreshToken = refreshToken;
   await user.save();
 
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
@@ -267,6 +263,28 @@ const signIn = async (req, res) => {
     }
   });
 
+   // Generate tokens
+   const token = generateToken(user);
+   const refreshToken = generateRefreshToken(user);
+
+   user.refreshToken = refreshToken;
+   await user.save();
+ 
+   res.cookie("token", token, {
+     httpOnly: true,
+     secure: process.env.NODE_ENV === "production",
+     sameSite: "Lax",
+     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+   });
+ 
+   res.cookie("refreshToken", refreshToken, {
+     httpOnly: true,
+     secure: process.env.NODE_ENV === "production",
+     sameSite: "Lax",
+     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+   });
+ 
+
   res.status(200).json({
     message: "OTP sent to your email",
     email: user.email,
@@ -308,7 +326,7 @@ const verifyOtp = async (req, res) => {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
@@ -471,13 +489,13 @@ const logout = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
   });
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
   });
 
   res.status(200).json({ message: "Logged out successfully" });
@@ -706,14 +724,14 @@ const refreshToken = async (req, res) => {
   res.cookie("token", newToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
   res.cookie("refreshToken", newRefreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 

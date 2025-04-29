@@ -1,16 +1,21 @@
 const Trips = require("../../models/Trips/TripsSchema");
+const Driver = require("../../models/UserManagment/DriverSchema");
+const Passenger = require("../../models/UserManagment/PassengerSchema");
 const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
 
 const post = async (req, res) => {
   const {
-    tripPassanger,
-    scheduledDate,
-    tripFare,
+    tripPickupLoctaion,
+    tripDropoffLocation,
+    tripScheduledDate,
+    tripfare,
+    tripDistance,
+    tripBookingCatagory,
     tripPaymentType,
-    tripStatus,
-    tripCurrentDate,
-    tripDriver,
     tripVehicleType,
+    tripPassengerId,
+    tripDriverId,
+    tripVehicleId
   } = req.body;
 
   const prefix = "TRP";
@@ -24,55 +29,128 @@ const post = async (req, res) => {
     throw new BadRequestError("Trip with this trip ID already exists");
   }
 
-  const newTrips = new Trips({
+  // Check if passenger and driver exist
+  const passenger = await Passenger.findById(tripPassengerId);
+  if (!passenger) {
+    throw new NotFoundError("Passenger not found");
+  }
+
+  const driver = await Driver.findById(tripDriverId);
+  if (!driver) {
+    throw new NotFoundError("Driver not found");
+  }
+
+  const newTrip = new Trips({
     tripID,
-    tripPassanger,
-    scheduledDate,
-    tripFare,
+    tripPickupLoctaion,
+    tripDropoffLocation,
+    tripScheduledDate,
+    tripfare,
+    tripDistance,
+    tripBookingCatagory,
     tripPaymentType,
-    tripStatus,
-    tripCurrentDate,
-    tripDriver,
     tripVehicleType,
+    tripPassengerId,
+    tripDriverId,
+    tripVehicleId
   });
 
-  await newTrips.save();
+  const savedTrip = await newTrip.save();
+
+  // Update passenger's total rides and add trip to history
+  passenger.passengerTotalRides = (passenger.passengerTotalRides || 0) + 1;
+  passenger.passengerHistory.push(savedTrip._id);
+  await passenger.save();
+
+  // Update driver's total trips
+  driver.driverTotalTrips = (driver.driverTotalTrips || 0) + 1;
+  driver.driverHistory.push(savedTrip._id);
+
+  await driver.save();
 
   res.status(201).json({
-    trips: {
-      tripID: newTrips.tripID,
-      tripPassanger: newTrips.tripPassanger,
-      scheduledDate: newTrips.scheduledDate,
-      tripFare: newTrips.tripFare,
-      tripPaymentType: newTrips.tripPaymentType,
-      tripStatus: newTrips.tripStatus,
-      tripCurrentDate: newTrips.tripCurrentDate,
-      tripDriver: newTrips.tripDriver,
-      tripVehicleType: newTrips.tripVehicleType,
-    },
+    success: true,
+    trip: savedTrip,
+    message: "Trip created successfully"
   });
 };
 
 // GET: Get all trips
 const get = async (req, res) => {
-  const trips = await Trips.find({}).sort({ createdAt: -1 });
-  res.status(200).json(trips);
+  const trips = await Trips.find({})
+    .populate('tripPassengerId', 'passengerName passengerContact')
+    .populate('tripDriverId', 'driverName driverContact')
+    .populate('tripVehicleId', 'vehicleNumber vehicleModel')
+    .sort({ createdAt: -1 });
+    
+  res.status(200).json({
+    success: true,
+    trips
+  });
 };
 
 // GET: Get specific trip by ID
 const getById = async (req, res) => {
   const { id } = req.params;
 
-  const trips = await Trips.findById(id);
-  if (!trips) {
+  const trip = await Trips.findById(id)
+    .populate('tripPassengerId', 'passengerName passengerContact passengerImage')
+    .populate('tripDriverId', 'driverName driverContact driverProfilePic driver driverRating')
+    .populate('tripVehicleId');
+    
+  if (!trip) {
     throw new NotFoundError("Trip");
   }
 
-  res.status(200).json(trips);
+  res.status(200).json({
+    success: true,
+    trip
+  });
+};
+// DELETE: Delete a trip by ID
+const deleteById = async (req, res) => {
+  const { id } = req.params;
+
+  const trip = await Trips.findById(id);
+  if (!trip) {
+    throw new NotFoundError("Trip");
+  }
+
+  // Get passenger and driver references before deleting the trip
+  const passengerId = trip.tripPassengerId;
+  const driverId = trip.tripDriverId;
+
+  // Delete the trip
+  await Trips.findByIdAndDelete(id);
+
+  // Update passenger's total rides and remove trip from history
+  if (passengerId) {
+    await Passenger.findByIdAndUpdate(
+      passengerId,
+      {
+        $inc: { passengerTotalRides: -1 },
+        $pull: { passengerHistory: id }
+      }
+    );
+  }
+
+  // Update driver's total trips
+  if (driverId) {
+    await Driver.findByIdAndUpdate(
+      driverId,
+      { $inc: { driverTotalTrips: -1 } }
+    );
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Trip deleted successfully"
+  });
 };
 
 module.exports = {
   post,
   get,
   getById,
+  deleteById
 };

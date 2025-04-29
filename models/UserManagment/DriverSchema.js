@@ -5,7 +5,6 @@ const DriverSchema = new mongoose.Schema(
     driverID: {
       type: String,
     },
-
     driverName: {
       type: String,
       required: true,
@@ -76,6 +75,13 @@ const DriverSchema = new mongoose.Schema(
       url: String,
       filename: String,
     },
+    driverHistory: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "RideTrip",
+        default: null,
+      },
+    ],
     driverCnicPicFront: {
       url: { type: String, required: true },
       filename: { type: String, required: true },

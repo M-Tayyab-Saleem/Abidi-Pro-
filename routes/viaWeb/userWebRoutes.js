@@ -20,7 +20,7 @@ router.route("/")
   .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllUsers))
 
 router.route("/current")
-  .get(/*isLoggedIn,*/ catchAsync(getCurrentUser));
+  .get(isLoggedIn, catchAsync(getCurrentUser));
 
 router.route("/:id")
   .get(/*isLoggedIn,*/ catchAsync(getUserById))

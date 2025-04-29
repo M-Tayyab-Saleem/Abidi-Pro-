@@ -22,7 +22,7 @@ router.route("/")
   .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createLog));
 
 router.route("/info")
-  .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createInfoLog));
+  .post(isLoggedIn, /*restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createInfoLog));
 
 router.route("/error")
   .post(/*isLoggedIn, restrictTo('admin'), validateRequest(logValidationSchema),*/ catchAsync(createErrorLog));
