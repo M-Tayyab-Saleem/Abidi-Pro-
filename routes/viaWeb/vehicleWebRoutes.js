@@ -22,7 +22,7 @@ const {
 const {
   getAllVehiclesDetails,
   getVehicleDetailsById,
-  postDeclineOrResubmitVehicle,
+  postDeclineVehicle,
 } = require("../../controllers/VehicleManagment/VehicleDetails");
 
 
@@ -46,6 +46,6 @@ router.route("/details/:id")
   .get(/*isLoggedIn,*/ catchAsync(getVehicleDetailsById));
 
 router.route("/status/:id")
-  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(postDeclineOrResubmitVehicle));
+  .post(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(postDeclineVehicle));
 
 module.exports = router;

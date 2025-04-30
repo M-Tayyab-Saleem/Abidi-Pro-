@@ -11,6 +11,7 @@ const {
   getUserDriverById,
   updateDriverById,
   deleteDriverById,
+  approveDriver,
 } = require("../../controllers/UserManagment/userDriver");
 
 // Import validation schemas
@@ -42,9 +43,11 @@ router.route("/")
     catchAsync(createDriver)
   );
 
-router.route("/:id")
+  router.patch("/approve/:id", catchAsync(approveDriver));
+
+  router.route("/:id")
   .get( catchAsync(getUserDriverById))
-  .put( validateRequest(driverUpdateSchema), catchAsync(updateDriverById))
+  .put( catchAsync(updateDriverById))
   .delete( catchAsync(deleteDriverById));
 
 

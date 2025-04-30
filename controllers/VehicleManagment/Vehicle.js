@@ -61,14 +61,7 @@ const createVehicle = async (req, res) => {
       );
     }
 
-    const vehiclePrefix = "RideV";
-    const vehicleCount = await Vehicle.countDocuments();
-    const vehicleNextNumber = vehicleCount + 1;
-    const vehiclePaddedNumber = String(vehicleNextNumber).padStart(3, "0");
-    const vehicleID = vehiclePrefix + vehiclePaddedNumber;
-
     const newVehicle = new Vehicle({
-      vehicleID,
       model,
       vehicleType,
       color,
@@ -228,10 +221,41 @@ const deleteVehicle = async (req, res, next) => {
   });
 };
 
+const approveVehicle = async (req, res, next) => {
+  const { id } = req.params;
+
+  const vehicle = await Vehicle.findById(id);
+  if (!vehicle) {
+    return next(new NotFoundError("Vehicle not found"));
+  }
+
+  if (vehicle.status !== 'pending') {
+    throw new BadRequestError('Only pending vehicles can be approved');
+  }
+
+  const vehiclePrefix = "RideV";
+  const vehicleCount = await Vehicle.countDocuments({ vehicleID: { $ne: null } });
+  const vehicleNextNumber = vehicleCount + 1;
+  const vehiclePaddedNumber = String(vehicleNextNumber).padStart(3, "0");
+  const vehicleID = vehiclePrefix + vehiclePaddedNumber;
+
+  vehicle.status = 'approved';
+  vehicle.vehicleID = vehicleID;
+
+  const updatedVehicle = await vehicle.save();
+
+  res.status(200).json({
+    success: true,
+    vehicle: updatedVehicle,
+    message: "Vehicle approved successfully"
+  });
+};
+
 module.exports = {
   createVehicle,
   getAllVehicles,
   getVehicleById,
   updateVehicle,
   deleteVehicle,
+  approveVehicle, 
 };

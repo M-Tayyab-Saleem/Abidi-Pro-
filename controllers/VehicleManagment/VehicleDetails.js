@@ -22,29 +22,58 @@ const getVehicleDetailsById = async (req, res, next) => {
   res.status(200).json(vehicle);
 };
 
-const postDeclineOrResubmitVehicle = async (req, res, next) => {
-  const { id } = req.params;
-  const { vehicleDeclineReason, vehicleReSubmit } = req.body;
 
-  if (!vehicleDeclineReason || !vehicleReSubmit) {
-    return next(new BadRequestError("Decline reason and resubmit status are required"));
+const postDeclineVehicle = async (req, res, next) => {
+  const { id } = req.params;
+  const { 
+    vehicleDeclineReason, 
+    vehicleDeclinedDocuments = []
+  } = req.body;
+
+  if (!vehicleDeclineReason) {
+    return next(new BadRequestError("Decline reason is required"));
   }
+
+  const vehicle = await Vehicle.findById(id);
+  if (!vehicle) {
+    return next(new NotFoundError("Vehicle Not Found"));
+  }
+
+  
+  const allDocumentFields = [
+    'vehicleFrontImage',
+    'vehicleBackImage',
+    'vehicleRightImage',
+    'vehicleLeftImage',
+    'vehicleRegistrationBookFront'
+  ];
+
+  const approvedDocuments = allDocumentFields.filter(
+    docField => !vehicleDeclinedDocuments.includes(docField)
+  );
+
+  const updateData = {
+    vehicleDeclineReason,
+    vehicleDeclinedDocuments: vehicleDeclinedDocuments,
+    vehicleApprovedDocuments: approvedDocuments,
+    status: 'rejected'
+  };
 
   const updatedVehicle = await Vehicle.findByIdAndUpdate(
     id,
-    { vehicleDeclineReason, vehicleReSubmit },
+    updateData,
     { new: true }
   );
 
-  if (!updatedVehicle) {
-    return next(new NotFoundError("Vehicle"));
-  }
-
-  res.status(200).json(updatedVehicle);
+  res.status(200).json({
+    success: true,
+    vehicle: updatedVehicle,
+    message: "Vehicle declined successfully with document status updated"
+  });
 };
 
 module.exports = {
   getAllVehiclesDetails,
   getVehicleDetailsById,
-  postDeclineOrResubmitVehicle,
+  postDeclineVehicle,
 };

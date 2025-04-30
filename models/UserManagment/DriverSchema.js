@@ -60,8 +60,11 @@ const DriverSchema = new mongoose.Schema(
     driverDeclineReason: {
       type: String,
     },
-    driverReSubmit: {
-      type: String,
+    driverApprovedDocuments: {
+      type: [String],
+    },
+    driverDeclinedDocuments: {
+      type: [String],
     },
     driverProfilePic: {
       url: String,
@@ -97,7 +100,7 @@ const DriverSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "inactive", "pending", "rejected"],
+      enum: ["approved", "inactive", "active" , "pending", "rejected"],
       default: "pending",
     },
   },

@@ -12,7 +12,8 @@ const {
   updateVehicle,
   getAllVehicles,
   getVehicleById,
-  deleteVehicle
+  deleteVehicle,
+  approveVehicle
 } = require("../../controllers/VehicleManagment/Vehicle");
 
 const {
@@ -42,6 +43,9 @@ router.route("/")
     catchAsync(createVehicle)
   )
   .get(catchAsync(getAllVehicles));
+
+  router.patch("/approve/:id", catchAsync(approveVehicle));
+
 
 router.route("/:id")
   .get(catchAsync(getVehicleById))

@@ -44,8 +44,11 @@ const vehicleSchema = new mongoose.Schema(
     vehicleDeclineReason: {
       type: String,
     },
-    vehicleReSubmit: {
-      type: String,
+    vehicleDeclinedDocuments: {
+      type: [String],
+    },
+    vehicleApprovedDocuments: {
+      type: [String],
     },
     vehicleFrontImage: {
       url: { type: String, required: true },
@@ -74,7 +77,7 @@ const vehicleSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["available", "assigned", "maintenance", "pending"],
+      enum: ["available", "assigned", "maintenance", "pending","approved", "rejected"],
       default: "pending",
     },
   },
