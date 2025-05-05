@@ -25,6 +25,7 @@ const {
   updateDriverById,
   deleteDriverById,
   updateDeclineOrResubmit,
+  approveDriver,
 } = require("../../controllers/UserManagment/userDriver");
 
 
@@ -51,6 +52,10 @@ router.route("/")
     catchAsync(createDriver)
   )
   .get(/*isLoggedIn, restrictTo('admin', 'dispatcher'),*/ catchAsync(getAllUserDrivers));
+
+
+  router.patch("/approve/:id", catchAsync(approveDriver));
+
 
 router.route("/:id")
   .get(/*isLoggedIn, restrictTo('admin', 'dispatcher', 'driver'),*/ catchAsync(getUserDriverById))

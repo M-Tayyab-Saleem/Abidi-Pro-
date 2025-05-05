@@ -12,6 +12,7 @@ const {
   updateDriverById,
   deleteDriverById,
   approveDriver,
+  resubmitDriverDocument,
 } = require("../../controllers/UserManagment/userDriver");
 
 // Import validation schemas
@@ -39,16 +40,24 @@ const uploadDriverFiles = multer({
 router.route("/")
   .post(
     uploadDriverFiles, 
-    validateRequest(driverValidationSchema), 
+    /*validateRequest(driverValidationSchema),*/
     catchAsync(createDriver)
   );
 
-  router.patch("/approve/:id", catchAsync(approveDriver));
+
+  router.patch(
+    "/resubmit-documents/:id",
+    uploadDriverFiles,
+    catchAsync(resubmitDriverDocument)
+  );
+  
 
   router.route("/:id")
   .get( catchAsync(getUserDriverById))
   .put( catchAsync(updateDriverById))
   .delete( catchAsync(deleteDriverById));
+
+  
 
 
 module.exports = router;

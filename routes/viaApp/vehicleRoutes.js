@@ -13,8 +13,9 @@ const {
   getAllVehicles,
   getVehicleById,
   deleteVehicle,
-  approveVehicle
 } = require("../../controllers/VehicleManagment/Vehicle");
+
+const { resubmitVehicleDocuments } = require("../../controllers/VehicleManagment/VehicleDetails");
 
 const {
   getVehicleAvailability,
@@ -39,13 +40,15 @@ const uploadVehicleDocs = multer({
 router.route("/")
   .post(
     uploadVehicleDocs, 
-    validateRequest(vehicleValidateSchema), 
     catchAsync(createVehicle)
   )
   .get(catchAsync(getAllVehicles));
 
-  router.patch("/approve/:id", catchAsync(approveVehicle));
-
+  router.patch(
+    "/resubmit-documents/:id",
+    uploadVehicleDocs,
+    catchAsync(resubmitVehicleDocuments)
+  );
 
 router.route("/:id")
   .get(catchAsync(getVehicleById))

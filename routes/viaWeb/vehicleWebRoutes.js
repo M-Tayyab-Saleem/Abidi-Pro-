@@ -13,6 +13,7 @@ const {
   getVehicleById,
   updateVehicle,
   deleteVehicle,
+  approveVehicle
 } = require("../../controllers/VehicleManagment/Vehicle");
 
 const {
@@ -32,6 +33,8 @@ router.route("/")
 
 router.route("/availability")
   .get(/*isLoggedIn,*/ catchAsync(getVehicleAvailability));
+  router.patch("/approve/:id", catchAsync(approveVehicle));
+
 
 router.route("/:id")
   .get(/*isLoggedIn,*/ catchAsync(getVehicleById))

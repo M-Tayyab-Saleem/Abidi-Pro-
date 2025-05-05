@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const sendOtpOnWhatsApp = require("../../config/contactConfig");
 
 
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
+const generateOTP = () => Math.floor(1000 + Math.random() * 9000);
 
 // Function to generate token
 const generateToken = (user) => {

@@ -1,8 +1,7 @@
 const Driver = require("../../models/UserManagment/DriverSchema");
 const Vehicle = require("../../models/UserManagment/VehicleSchema");
-const { NotFoundError, BadRequestError } = require('../../utils/ExpressError');
-const getCurrentDate = require('../../utils/getCurrentDate');
-
+const { NotFoundError, BadRequestError } = require("../../utils/ExpressError");
+const getCurrentDate = require("../../utils/getCurrentDate");
 
 function getAgeFromDOB(dob) {
   const [day, month, year] = dob.split("-").map(Number);
@@ -38,49 +37,62 @@ const createDriver = async (req, res) => {
   } = req.body;
 
   // Check if driver already exists
-  const driverExists = await Driver.findOne({ 
-    $or: [
-      { driverContact },
-      { driverCnic },
-      { driverEmail }
-    ]
+  const driverExists = await Driver.findOne({
+    $or: [{ driverContact }, { driverCnic }, { driverEmail }],
   });
   if (driverExists) {
-    throw new BadRequestError('Driver with these details already exists');
+    throw new BadRequestError("Driver with these details already exists");
   }
 
-  const driverProfilePic = req.files?.driverProfilePic?.[0] ? {
-    url: req.files.driverProfilePic[0].path,
-    filename: req.files.driverProfilePic[0].filename
-  } : null;
+  const driverProfilePic = req.files?.driverProfilePic?.[0]
+    ? {
+        url: req.files.driverProfilePic[0].path,
+        filename: req.files.driverProfilePic[0].filename,
+      }
+    : null;
 
-  const driverCnicPicFront = req.files?.driverCnicPicFront?.[0] ? {
-    url: req.files.driverCnicPicFront[0].path,
-    filename: req.files.driverCnicPicFront[0].filename
-  } : null;
+  const driverCnicPicFront = req.files?.driverCnicPicFront?.[0]
+    ? {
+        url: req.files.driverCnicPicFront[0].path,
+        filename: req.files.driverCnicPicFront[0].filename,
+      }
+    : null;
 
-  const driverCnicPicBack = req.files?.driverCnicPicBack?.[0] ? {
-    url: req.files.driverCnicPicBack[0].path,
-    filename: req.files.driverCnicPicBack[0].filename
-  } : null;
+  const driverCnicPicBack = req.files?.driverCnicPicBack?.[0]
+    ? {
+        url: req.files.driverCnicPicBack[0].path,
+        filename: req.files.driverCnicPicBack[0].filename,
+      }
+    : null;
 
-  const driverLicensePicFront = req.files?.driverLicensePicFront?.[0] ? {
-    url: req.files.driverLicensePicFront[0].path,
-    filename: req.files.driverLicensePicFront[0].filename
-  } : null;
+  const driverLicensePicFront = req.files?.driverLicensePicFront?.[0]
+    ? {
+        url: req.files.driverLicensePicFront[0].path,
+        filename: req.files.driverLicensePicFront[0].filename,
+      }
+    : null;
 
-  const driverLicensePicBack = req.files?.driverLicensePicBack?.[0] ? {
-    url: req.files.driverLicensePicBack[0].path,
-    filename: req.files.driverLicensePicBack[0].filename
-  } : null;
-
+  const driverLicensePicBack = req.files?.driverLicensePicBack?.[0]
+    ? {
+        url: req.files.driverLicensePicBack[0].path,
+        filename: req.files.driverLicensePicBack[0].filename,
+      }
+    : null;
 
   // Validate required documents
-  if (!driverProfilePic || !driverCnicPicFront || !driverCnicPicBack || !driverLicensePicFront || !driverLicensePicBack) {
-    throw new BadRequestError('All required documents (Image, CNIC front/back, License front/back) must be uploaded');
+  if (
+    !driverProfilePic ||
+    !driverCnicPicFront ||
+    !driverCnicPicBack ||
+    !driverLicensePicFront ||
+    !driverLicensePicBack
+  ) {
+    throw new BadRequestError(
+      "All required documents (Image, CNIC front/back, License front/back) must be uploaded"
+    );
   }
 
-  const driverJoiningDate = getCurrentDate(); 
+  const driverJoiningDate = getCurrentDate();
   const driverAge = getAgeFromDOB(driverBirthDate);
 
   // Create new driver
@@ -104,27 +116,28 @@ const createDriver = async (req, res) => {
     driverCnicPicBack,
     driverLicensePicFront,
     driverLicensePicBack,
-    status: 'pending' 
+    status: "pending",
   });
 
   const savedDriver = await newDriver.save();
-  res.status(201).json({ 
+  res.status(201).json({
     success: true,
     driver: savedDriver,
-    message: "Driver created successfully" 
+    message: "Driver created successfully",
   });
 };
 
-
 const getAllUserDrivers = async (req, res) => {
-  const drivers = await Driver.find({}).populate('assignedVehicle').sort({ createdAt: -1 });
+  const drivers = await Driver.find({})
+    .populate("assignedVehicle")
+    .sort({ createdAt: -1 });
   res.status(200).json(drivers);
 };
 
 const getUserDriverById = async (req, res) => {
   const { id } = req.params;
-  const driver = await Driver.findById(id).populate('assignedVehicle');
-  if (!driver) throw new NotFoundError('User');
+  const driver = await Driver.findById(id).populate("assignedVehicle");
+  if (!driver) throw new NotFoundError("User");
   res.status(200).json(driver);
 };
 
@@ -137,7 +150,7 @@ const updateDriverById = async (req, res) => {
     driverAge,
     driverCnic,
     driverAccountNumber,
-    driverLicenseNumber
+    driverLicenseNumber,
   } = req.body;
 
   const updatedDriver = await Driver.findByIdAndUpdate(
@@ -149,12 +162,12 @@ const updateDriverById = async (req, res) => {
       driverAge,
       driverCnic,
       driverAccountNumber,
-      driverLicenseNumber
+      driverLicenseNumber,
     },
     { new: true }
   );
-  
-  if (!updatedDriver) throw new NotFoundError('Driver');
+
+  if (!updatedDriver) throw new NotFoundError("Driver");
   res.json(updatedDriver);
 };
 
@@ -167,46 +180,41 @@ const deleteDriverById = async (req, res) => {
 //
 const updateDeclineOrResubmit = async (req, res) => {
   const { id } = req.params;
-  const { 
-    driverDeclineReason, 
-    driverDeclinedDocuments = [] 
-  } = req.body;
+  const { driverDeclineReason, driverDeclinedDocuments = [] } = req.body;
 
   if (!driverDeclineReason) {
-    throw new BadRequestError('Decline reason is required');
+    throw new BadRequestError("Decline reason is required");
   }
 
   const allDocumentFields = [
-    'driverProfilePic',
-    'driverCnicPicFront',
-    'driverCnicPicBack',
-    'driverLicensePicFront',
-    'driverLicensePicBack'
+    "driverProfilePic",
+    "driverCnicPicFront",
+    "driverCnicPicBack",
+    "driverLicensePicFront",
+    "driverLicensePicBack",
   ];
 
   const approvedDocuments = allDocumentFields.filter(
-    docField => !driverDeclinedDocuments.includes(docField)
+    (docField) => !driverDeclinedDocuments.includes(docField)
   );
 
   const updateData = {
     driverDeclineReason,
-    status: 'rejected',
+    status: "rejected",
     driverDeclinedDocuments: driverDeclinedDocuments,
-    driverApprovedDocuments: approvedDocuments
+    driverApprovedDocuments: approvedDocuments,
   };
 
-  const updatedDriver = await Driver.findByIdAndUpdate(
-    id,
-    updateData,
-    { new: true }
-  );
-  
-  if (!updatedDriver) throw new NotFoundError('Driver');
-  
+  const updatedDriver = await Driver.findByIdAndUpdate(id, updateData, {
+    new: true,
+  });
+
+  if (!updatedDriver) throw new NotFoundError("Driver");
+
   res.status(200).json({
     success: true,
     driver: updatedDriver,
-    message: "Driver declined successfully with document status updated"
+    message: "Driver declined successfully with document status updated",
   });
 };
 
@@ -215,10 +223,10 @@ const approveDriver = async (req, res) => {
   const { id } = req.params;
 
   const driver = await Driver.findById(id);
-  if (!driver) throw new NotFoundError('Driver not found');
+  if (!driver) throw new NotFoundError("Driver not found");
 
-  if (driver.status !== 'pending') {
-    throw new BadRequestError('Only pending drivers can be approved');
+  if (driver.status !== "pending") {
+    throw new BadRequestError("Only pending drivers can be approved");
   }
 
   const prefix = "RideDr";
@@ -227,7 +235,7 @@ const approveDriver = async (req, res) => {
   const paddedNumber = String(nextNumber).padStart(3, "0");
   const driverID = prefix + paddedNumber;
 
-  driver.status = 'approved';
+  driver.status = "approved";
   driver.driverID = driverID;
 
   const updatedDriver = await driver.save();
@@ -235,7 +243,56 @@ const approveDriver = async (req, res) => {
   res.status(200).json({
     success: true,
     driver: updatedDriver,
-    message: "Driver approved successfully"
+    message: "Driver approved successfully",
+  });
+};
+
+const resubmitDriverDocument = async (req, res) => {
+  const { id } = req.params;
+  const allowedFields = [
+    "driverProfilePic",
+    "driverCnicPicFront",
+    "driverCnicPicBack",
+    "driverLicensePicFront",
+    "driverLicensePicBack",
+  ];
+
+  const driver = await Driver.findById(id);
+  if (!driver) throw new NotFoundError("Driver not found");
+
+  let updatedFields = {};
+  let updatedDeclined = [...(driver.driverDeclinedDocuments || [])];
+  let shouldSetPending = false;
+
+  allowedFields.forEach((field) => {
+    const file = req.files?.[field]?.[0];
+    if (file) {
+      updatedFields[field] = {
+        url: file.path,
+        filename: file.filename,
+      };
+      updatedDeclined = updatedDeclined.filter((doc) => doc !== field);
+      shouldSetPending = true;
+    }
+  });
+
+  const updateData = {
+    ...updatedFields,
+    driverDeclinedDocuments: updatedDeclined,
+  };
+
+  if (driver.status === "rejected" && shouldSetPending) {
+    updateData.status = "pending";
+  }
+
+  const updatedDriver = await Driver.findByIdAndUpdate(id, updateData, {
+    new: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    driver: updatedDriver,
+    message: "Driver document(s) resubmitted and status updated if needed.",
   });
 };
 
@@ -247,4 +304,5 @@ module.exports = {
   deleteDriverById,
   updateDeclineOrResubmit,
   approveDriver,
+  resubmitDriverDocument,
 };

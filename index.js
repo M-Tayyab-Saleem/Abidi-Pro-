@@ -20,9 +20,14 @@ const webRoutes = require("./routes/viaWebRoutesMount");
 const appRoutes = require("./routes/viaAppRoutesMount");
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
 
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'exp://192.168.18.10:8081'],
+  credentials: true, 
+};
+
 
 app.use(cookieParser());
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
