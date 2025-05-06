@@ -5,10 +5,7 @@ const vehicleSchema = new mongoose.Schema(
     driverId: {
       type: String,
     },
-    vehicleID: {
-      type: String,
-      unique: true,
-    },
+
     model: {
       type: String,
       required: true,
@@ -33,6 +30,12 @@ const vehicleSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    vehicleID: {
+      type: String,
+      unique: true,
+      sparse: true,
+
     },
     chassisNo: {
       type: String,

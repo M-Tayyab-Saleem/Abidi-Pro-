@@ -38,7 +38,7 @@ const createDriver = async (req, res) => {
 
   // Check if driver already exists
   const driverExists = await Driver.findOne({
-    $or: [{ driverContact }, { driverCnic }, { driverEmail }],
+    $or: [{ driverContact }, { driverCnic }],
   });
   if (driverExists) {
     throw new BadRequestError("Driver with these details already exists");
