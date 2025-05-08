@@ -1,53 +1,72 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: false,
-      unique: false,
-      sparse: true, // sparse avoids errors on null
-    },
-    name: {
-      type: String,
-    },
-    password: {
-      type: String,
-      Select : false,
-    },
-    role: {
-      type: String,
-    },
-    contact:{
-      type: String,
-      required: true,
-      unique: true,
-    },
-    otp: {
-      type: String,
-    },
-
-    otpExpires: {
-      type: Date,
-    },
-    customId: {
-      type: String,
-    },
-    assignedTrip: {
-      type: String,
-    },
-    passwordResetToken: {
-      type: String,
-    },
-    passwordResetExpires: {
-      type: Date,
-    },
-    refreshToken: {
-      type: String,
-      select: false
-    },
+const userSchema = new mongoose.Schema({
+  employeeId: {
+    type: String,
+    required: true,
+    unique: true
   },
-  { timestamps: true }
-);
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  contact: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  role: {
+    type: String,
+    enum: ["Employee", "HR", "Manager", "Admin"],
+    default: "Employee"
+  },
+  department: {
+    type: String,
+    enum: ["HR", "Finance", "Marketing", "Sales"],
+    default: "HR",
+    },
+  designation: {
+    type: String,
+    enum: ["Junior", "Senior", "Lead"],
+    default: "Junior",
+    },
+  dateOfJoining: {
+    type: Date,
+    default: Date.now
+    },
+  salary: {
+    type: Number,
+    default: 0
+    },
+  address: {
+    type: String,
+    default: ""
+    },
+  employmentStatus: {
+    type: String,
+    enum: ["Active", "On Leave", "Terminated"],
+    default: "Active"
+  },
+  password: {
+    type: String,
+    required: true,
+    select: false
+  },
+  otp: String,
+  otpExpires: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  refreshToken: {
+    type: String,
+    select: false
+  }
+}, {
+  timestamps: true
+});
 
-module.exports = mongoose.model("RideUser", userSchema);
+module.exports = mongoose.model("Employee", userSchema);

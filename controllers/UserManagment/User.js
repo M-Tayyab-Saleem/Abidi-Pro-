@@ -1,75 +1,50 @@
-const User = require("../../models/UserManagment/UserSchema");
-const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
+const Employee = require("../../models/UserManagment/UserSchema");
 
-const getAllUsers = async (req, res) => {
-  const users = await User.find({}).sort({ createdAt: -1 });
-  res.status(200).json(users);
-};
-
-const getUserById = async (req, res) => {
-  const { id } = req.params;
-  const user = await User.findById(id);
-  if (!user) {
-    throw new NotFoundError("User");
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await Employee.findById(req.params.id).select("-password");
+    res.json({ success: true, data: user });
+  } catch {
+    res.status(404).json({ success: false, message: "User not found" });
   }
-  res.status(200).json(user);
 };
 
-const updateUser = async (req, res) => {
-  const { id } = req.params;
-  const { name, email, role } = req.body;
-
-  const user = await User.findById(id);
-  if (!user) {
-    throw new NotFoundError("User");
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const user = await Employee.findById(req.user._id).select("-password");
+    res.json({ success: true, data: user });
+  } catch {
+    res.status(500).json({ success: false, message: "Error fetching user" });
   }
-
-  user.name = name || user.name;
-  user.email = email || user.email;
-  user.role = role || user.role;
-  await user.save();
-
-  res.status(200).json({
-    user: {
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
-  });
 };
 
-const deleteUser = async (req, res) => {
-  const { id } = req.params;
-  const user = await User.findByIdAndDelete(id);
-  if (!user) {
-    throw new NotFoundError("User");
+exports.updateUser = async (req, res) => {
+  try {
+    const user = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true }).select("-password");
+    res.json({ success: true, data: user });
+  } catch {
+    res.status(400).json({ success: false, message: "Update failed" });
   }
-  res.status(200).json({ message: "User deleted successfully" });
 };
 
-const getCurrentUser = async (req, res) => {
-  const user = await User.findById(req.user.id, "-password -otp -otpExpires");
-
-  if (!user) {
-    throw new NotFoundError("User not found");
+exports.deleteUser = async (req, res) => {
+  try {
+    await Employee.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "User deleted" });
+  } catch {
+    res.status(400).json({ success: false, message: "Delete failed" });
   }
-
-  res.status(200).json({
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      customId: user.customId,
-      createdAt: user.createdAt,
-    },
-  });
 };
 
-module.exports = {
-  getAllUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
-  getCurrentUser
+exports.listEmployees = async (req, res) => {
+  try {
+    const query = {};
+    if (req.query.role) query.role = req.query.role;
+    if (req.query.department) query.department = req.query.department;
+
+    const users = await Employee.find(query).select("-password");
+    res.json({ success: true, data: users });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to list users" });
+  }
 };
