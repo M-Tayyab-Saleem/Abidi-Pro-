@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const catchAsync = require("../utils/catchAsync");
 const multer = require('multer');
-const upload = multer({ storage });
+// const upload = multer({ storage });
 const { isLoggedIn } = require("../middlewares/authMiddleware");
 const { restrictTo } = require("../middlewares/roleMiddleware");
 
@@ -13,11 +13,11 @@ const {
   verifyOtp,
   resendOtp,
   logout,
-} = require("../controllers/UserManagment/auth");
+} = require("../controllers/auth");
 
 const validateRequest = require("../middlewares/validateRequest");
-const { forgotPassword, resetPassword, verifyResetToken } = require("../controllers/UserManagment/auth");
-const { refreshToken } = require("../controllers/UserManagment/auth");
+const { forgotPassword, resetPassword, verifyResetToken } = require("../controllers/auth");
+const { refreshToken } = require("../controllers/auth");
 
 
 

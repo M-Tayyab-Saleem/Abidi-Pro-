@@ -3,7 +3,7 @@ const router = express.Router();
 const catchAsync = require("../utils/catchAsync");
 const multer  = require('multer')
 const {storage}= require("../storageConfig");
-const upload = multer({ storage });
+// const upload = multer({ storage });
 const { isLoggedIn } = require("../middlewares/authMiddleware");
 const { restrictTo } = require("../middlewares/roleMiddleware");
 
@@ -15,7 +15,12 @@ const {
   getLeaveRequestById,
   updateLeaveRequest,
   deleteLeaveRequest
-} = require("./routes/leaveRequestRoutes");
+} = require("../controllers/leaveRequest");
+const companyModal = require("../models/companyModel");
+const UserSchema = require("../models/UserSchema");
+const { registerCompany } = require("../controllers/registerCompany");
+const { registerUser } = require("../controllers/registerUser");
+const { checkInn, checkOut, getAttendanceById, getAllAttendanceByCompany, getEmployeeAttendanceWeekly } = require("../controllers/checkInn");
 
 //Leave Routes
 router.post("/createLeave", catchAsync(createLeaveRequest));
@@ -23,6 +28,37 @@ router.get("/getAllLeaves", catchAsync(getLeaveRequests));
 router.get("/getLeave/:id", catchAsync(getLeaveRequestById));
 router.put("/updateLeave/:id", catchAsync(updateLeaveRequest));
 router.delete("/deleteLeave/:id", catchAsync(deleteLeaveRequest));
+
+// router.post("/createAttendance", catchAsync(createAttendence));
+router.get("/getAllAttendance", catchAsync(getLeaveRequests));
+router.get("/getAttendance/:id", catchAsync(getLeaveRequestById));
+router.put("/updateAttendance/:id", catchAsync(updateLeaveRequest));
+router.delete("/deleteAttendance/:id", catchAsync(deleteLeaveRequest));
+
+
+// company register
+router.post('/company/register', catchAsync(registerCompany));
+
+// POST /user/register
+router.post('/user/register',catchAsync(registerUser));
+
+// POST /attendance/checkin/:employeeId
+
+router.post('/attendance/checkin/:employeeId',catchAsync(checkInn));
+
+// POST /attendance/checkout/:attendanceId
+router.post('/attendance/checkout/:attendanceId',catchAsync(checkOut));
+
+// GET /attendance/:employeeId
+router.get('/attendance/:employeeId',catchAsync(getAttendanceById) );
+
+// GET /attendance/all/:companyId
+router.get('/attendance/all/:companyId', catchAsync(getAllAttendanceByCompany));
+
+// GET /attendance/weekly/:employeeId
+router.get('/attendance/weekly/:employeeId',catchAsync(getEmployeeAttendanceWeekly));
+
+
 
 module.exports = router;
 

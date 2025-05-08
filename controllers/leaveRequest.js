@@ -1,4 +1,4 @@
-const LeaveRequest = require("../../models/LeaveRequest/leaveRequestSchema");
+const LeaveRequest = require("../models/leaveRequestSchema");
 
 // Create Leave Request
 exports.createLeaveRequest = async (req, res) => {

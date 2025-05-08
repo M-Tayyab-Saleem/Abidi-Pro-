@@ -1,11 +1,11 @@
 require("dotenv").config();
-const User = require("../../models/UserManagment/UserSchema");
+const User = require("../models/UserSchema");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const { info, warn, error, debug } = require("../../utils/logger");
-const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
+const { info, warn, error, debug } = require("../utils/logger");
+const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 const jwt = require("jsonwebtoken");
-const BlacklistedToken = require("../../models/UserManagment/BlacklistedTokenSchema");
+const BlacklistedToken = require("../models/BlacklistedTokenSchema");
 const crypto = require('crypto');
 
 

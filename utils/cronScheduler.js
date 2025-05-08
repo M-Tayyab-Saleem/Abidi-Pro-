@@ -1,8 +1,8 @@
 const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 const { info, warn, error, debug } = require("../utils/logger");
-const Log = require("../models/Logs/LogSchema"); // Your log model
-const User = require("../models/UserManagment/UserSchema"); // User model to get admin users
+const Log = require("../models//LogSchema"); // Your log model
+const User = require("../models//UserSchema"); // User model to get admin users
 const XLSX = require("xlsx");
 const path = require("path");
 const fs = require("fs");

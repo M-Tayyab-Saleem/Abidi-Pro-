@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { UnauthorizedError } = require('../utils/ExpressError');
 const { error } = require('../utils/logger');
-const BlacklistedToken = require('../models/UserManagment/BlacklistedTokenSchema'); 
+const BlacklistedToken = require('../models/BlacklistedTokenSchema'); 
 
 
 const isLoggedIn = async (req, res, next) => {
