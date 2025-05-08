@@ -4,6 +4,7 @@ const catchAsync = require("../utils/catchAsync");
 const multer = require('multer');
 const upload = multer({ storage });
 const { isLoggedIn } = require("../middlewares/authMiddleware");
+const { restrictTo } = require("../middlewares/roleMiddleware");
 
 // Import controllers
 const {
