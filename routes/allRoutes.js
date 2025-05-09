@@ -17,7 +17,7 @@ const {
   deleteLeaveRequest
 } = require("../controllers/leaveRequest");
 const companyModal = require("../models/companyModel");
-const UserSchema = require("../models/UserSchema");
+const UserSchema = require("../models/userSchema");
 const { registerCompany } = require("../controllers/registerCompany");
 const { registerUser } = require("../controllers/registerUser");
 const { checkInn, checkOut, getAttendanceById, getAllAttendanceByCompany, getEmployeeAttendanceWeekly } = require("../controllers/checkInn");
@@ -35,28 +35,64 @@ router.get("/getAttendance/:id", catchAsync(getLeaveRequestById));
 router.put("/updateAttendance/:id", catchAsync(updateLeaveRequest));
 router.delete("/deleteAttendance/:id", catchAsync(deleteLeaveRequest));
 
+const companyController = require("../controllers/registerCompany");
+const userController = require("../controllers/userController");
 
-// company register
-router.post('/company/register', catchAsync(registerCompany));
+// Create Company
+router.post("/companies", companyController.createCompany);
 
-// POST /user/register
-router.post('/user/register',catchAsync(registerUser));
+// Get All Companies
+router.get("/companies", companyController.getAllCompanies);
 
-// POST /attendance/checkin/:employeeId
+// Get Company by ID
+router.get("/companies/:id", companyController.getCompanyById);
 
-router.post('/attendance/checkin/:employeeId',catchAsync(checkInn));
+// Update Company
+router.put("/companies/:id", companyController.updateCompany);
 
-// POST /attendance/checkout/:attendanceId
-router.post('/attendance/checkout/:attendanceId',catchAsync(checkOut));
+// Delete Company
+router.delete("/companies/:id", companyController.deleteCompany);
 
-// GET /attendance/:employeeId
-router.get('/attendance/:employeeId',catchAsync(getAttendanceById) );
 
-// GET /attendance/all/:companyId
-router.get('/attendance/all/:companyId', catchAsync(getAllAttendanceByCompany));
+// Create User
+router.post("/users", userController.createUser);
 
-// GET /attendance/weekly/:employeeId
-router.get('/attendance/weekly/:employeeId',catchAsync(getEmployeeAttendanceWeekly));
+// Get All Users
+router.get("/users", userController.getAllUsers);
+
+// Get User by ID
+router.get("/users/:id", userController.getUserById);
+
+// Update User
+router.put("/users/:id", userController.updateUser);
+
+// Delete User
+router.delete("/users/:id", userController.deleteUser);
+
+// Login User
+router.post("/login", userController.loginUser);
+
+
+
+
+// // POST /user/register
+// router.post('/user/register',catchAsync(registerUser));
+
+// // POST /attendance/checkin/:employeeId
+
+// router.post('/attendance/checkin/:employeeId',catchAsync(checkInn));
+
+// // POST /attendance/checkout/:attendanceId
+// router.post('/attendance/checkout/:attendanceId',catchAsync(checkOut));
+
+// // GET /attendance/:employeeId
+// router.get('/attendance/:employeeId',catchAsync(getAttendanceById) );
+
+// // GET /attendance/all/:companyId
+// router.get('/attendance/all/:companyId', catchAsync(getAllAttendanceByCompany));
+
+// // GET /attendance/weekly/:employeeId
+// router.get('/attendance/weekly/:employeeId',catchAsync(getEmployeeAttendanceWeekly));
 
 
 

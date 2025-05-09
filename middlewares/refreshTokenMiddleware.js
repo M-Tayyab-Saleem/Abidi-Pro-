@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/UserSchema');
+const User = require('../models/userSchema');
 const { UnauthorizedError } = require('../utils/ExpressError');
 const catchAsync = require('../utils/catchAsync');
 

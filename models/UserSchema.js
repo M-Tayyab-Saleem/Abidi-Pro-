@@ -1,76 +1,3 @@
-// const mongoose = require("mongoose");
-
-// const userSchema = new mongoose.Schema({
-//   employeeId: {
-//     type: String,
-//     required: true,
-//     unique: true
-//   },
-//   name: {
-//     type: String,
-//     required: true
-//   },
-//   email: {
-//     type: String,
-//     required: true,
-//     unique: true
-//   },
-//   contact: {
-//     type: String,
-//     required: true,
-//     unique: true
-//   },
-//   role: {
-//     type: String,
-//     enum: ["Employee", "HR", "Manager", "Admin"],
-//     default: "Employee"
-//   },
-//   department: {
-//     type: String,
-//     enum: ["HR", "Finance", "Marketing", "Sales"],
-//     default: "HR",
-//     },
-//   designation: {
-//     type: String,
-//     enum: ["Junior", "Senior", "Lead"],
-//     default: "Junior",
-//     },
-//   dateOfJoining: {
-//     type: Date,
-//     default: Date.now
-//     },
-//   salary: {
-//     type: Number,
-//     default: 0
-//     },
-//   address: {
-//     type: String,
-//     default: ""
-//     },
-//   employmentStatus: {
-//     type: String,
-//     enum: ["Active", "On Leave", "Terminated"],
-//     default: "Active"
-//   },
-//   password: {
-//     type: String,
-//     required: true,
-//     select: false
-//   },
-//   otp: String,
-//   otpExpires: Date,
-//   passwordResetToken: String,
-//   passwordResetExpires: Date,
-//   refreshToken: {
-//     type: String,
-//     select: false
-//   }
-// }, {
-//   timestamps: true
-// });
-
-// module.exports = mongoose.model("Employee", userSchema);
-
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
@@ -78,6 +5,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true, // Ensure the email is unique in the database
   },
   password: {
     type: String,
@@ -88,14 +20,63 @@ const userSchema = new mongoose.Schema({
     enum: ["Admin", "SubAdmin", "Employee"],
     required: true,
   },
+  employee: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employee", // Reference to the Employee model
+    required: true,
+  },
   company: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
+    ref: "Company", // Reference to the Company model
+    required: true,
+  },
+  otp: {
+    type: String, // OTP field for one-time password
+  },
+  otpExpires: {
+    type: Date, // Timestamp for OTP expiry
+  },
+  passwordResetToken: {
+    type: String, // Token used for password reset
+  },
+  passwordResetExpires: {
+    type: Date, // Timestamp for password reset token expiry
+  },
+  refreshToken: {
+    type: String, // Refresh token for session management
+    select: false, // Don't include it in queries by default
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+}, {
+  timestamps: true, // Adds `createdAt` and `updatedAt` automatically
 });
+
+// Method to generate access token
+userSchema.methods.generateAccessToken = function() {
+  const jwt = require("jsonwebtoken");
+  const payload = {
+    userId: this._id,
+    role: this.role,
+    companyId: this.company,  // Include company ID in the payload (optional)
+  };
+  
+  // Set the token expiry (e.g., 15 minutes)
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+};
+
+userSchema.methods.generateAccessToken = function() {
+  // Generate access token using JWT
+  const jwt = require("jsonwebtoken");
+  const payload = {
+    userId: this._id,
+    role: this.role,
+  };
+  
+  // Set the token expiry (e.g., 15 minutes)
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+};
 
 module.exports = mongoose.model("User", userSchema);

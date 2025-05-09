@@ -1,5 +1,5 @@
 const companyModal = require("../models/companyModel");
-const UserSchema = require("../models/UserSchema");
+const UserSchema = require("../models/userSchema");
 
 exports.registerUser=async (req, res) => {
     try {
@@ -18,5 +18,6 @@ exports.registerUser=async (req, res) => {
       res.status(201).json({ success: true, user });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
+      console.log(error.response.message)
     }
   }

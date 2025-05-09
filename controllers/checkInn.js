@@ -12,11 +12,9 @@ exports.checkInn= async (req, res) => {
       // Check if the employee already has a record for today
       const today = new Date().setHours(0, 0, 0, 0); // Set the time to midnight
       let attendance = await attendanceSchema.findOne({ employee: employeeId, date: today });
-  
       if (attendance) {
         return res.status(400).json({ message: 'Attendance already marked for today' });
       }
-  
       // Create a new attendance record for the employee
       attendance = new attendanceSchema({
         employee: employeeId,
