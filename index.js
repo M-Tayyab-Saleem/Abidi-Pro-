@@ -11,7 +11,7 @@ const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 
 
 require("./utils/cronScheduler");  
-const PORT = process.env.PORT || 1000;
+const PORT = process.env.PORT || 3000;
 
 
 const allRoutes = require("./routes/allRoutes");
