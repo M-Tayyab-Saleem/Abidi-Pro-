@@ -1,4 +1,4 @@
-const companyModal = require("../models/companyModel");
+const companyModal = require("../models/companySchema");
 const UserSchema = require("../models/userSchema");
 
 exports.registerUser=async (req, res) => {

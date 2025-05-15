@@ -10,51 +10,87 @@ const employeeSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  timeZone: {
+    type: String,
+    required: true,
+  },
+  reportsTo: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  empID: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  role: {
+    type: String,
+    required: true,
+  },
+  phoneNumber: {
+    type: Number,
+    required: true,
+    unique: true, 
+  },
   designation: {
     type: String,
-    enum: ["Manager", "Engineer", "Director", "Intern", "HR", "Sales", "Developer"], // You can adjust this list as needed
     required: true,
   },
   department: {
     type: String,
-    enum: ["HR", "Engineering", "Sales", "Finance", "Marketing", "Operations"], // Enum for departments
-    required: true,
-  },
-  company: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
     required: true,
   },
   branch: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Branch", // Reference to the Branch model
+    type: String,
+    required: true,
+  },
+  empType: {
+    type: String,
+    enum: ["Permanent", "Contractor", "Intern", "Part Time"], 
     required: true,
   },
   joiningDate: {
     type: Date,
     required: true,
   },
-  status: {
+  address: {
+    type: String, 
+  },
+  empStatus: {
     type: String,
     enum: ["Active", "Inactive"],
     default: "Active",
   },
   salary: {
     type: Number,
-    required: true, // Assuming salary is a required field
   },
-  address: {
-    type: String, // Employee's address
-  },
-  contact: {
-    type: String, // Employee's contact number
-  },
-  employmentStatus: {
+  about: {
     type: String,
-    enum: ["Active", "On Leave", "Terminated"], // Enum for employment status
-    default: "Active", // Default value set to Active
   },
-  createdAt: {
+  experience: {
+    type: String,
+  },
+  education: {
+    type: String,
+  },
+  DOB: {
+    type: String,
+  },
+  maritalStatus: {
+    type: String,
+  },
+  emergencyContact: {
+    type: String,
+  },
+  addedby: {
+    type: String,
+  },
+  addedTime: {
     type: Date,
     default: Date.now,
   }

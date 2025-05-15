@@ -1,34 +1,50 @@
-const Company = require("../models/companyModel");
+const Company = require("../models/companySchema");
 const Branch = require("../models/branchSchema");
 
 // Create Company
 exports.createCompany = async (req, res) => {
-  const { name, address, logo, website, phoneNumber, companyType, branches, departments } = req.body;
+  const {
+    companyName,
+    companyOwner,
+    contactNo,
+    companyEmail,
+    website,
+    address,
+    noOfEmployees,
+    noOfApps,
+    aboutCompany,
+    companyLogo,
+    companyType
+  } = req.body;
 
   try {
     const newCompany = new Company({
-      name,
-      address,
-      logo,
+      companyName,
+      companyOwner,
+      contactNo,
+      companyEmail,
       website,
-      phoneNumber,
-      companyType,
-      branches,
-      departments,
+      address,
+      noOfEmployees,
+      noOfApps,
+      aboutCompany,
+      companyLogo,
+      companyType
     });
 
     const savedCompany = await newCompany.save();
     res.status(201).json(savedCompany);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to create company" });
   }
 };
+
 
 // Get All Companies
 exports.getAllCompanies = async (req, res) => {
   try {
-    const companies = await Company.find().populate("branches departments admins employees");
+    const companies = await Company.find()
     res.status(200).json(companies);
   } catch (error) {
     console.error(error);
@@ -41,7 +57,7 @@ exports.getCompanyById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const company = await Company.findById(id).populate("branches departments admins employees");
+    const company = await Company.findById(id)
 
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
@@ -54,34 +70,48 @@ exports.getCompanyById = async (req, res) => {
   }
 };
 
-// Update Company
 exports.updateCompany = async (req, res) => {
   const { id } = req.params;
-  const { name, address, logo, website, phoneNumber, companyType, branches, departments } = req.body;
+  const {
+    companyName,
+    companyOwner,
+    contactNo,
+    companyEmail,
+    website,
+    address,
+    noOfEmployees,
+    noOfApps,
+    aboutCompany,
+    companyLogo,
+    companyType
+  } = req.body;
 
   try {
     const company = await Company.findById(id);
-
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    company.name = name || company.name;
-    company.address = address || company.address;
-    company.logo = logo || company.logo;
+    company.companyName = companyName || company.companyName;
+    company.companyOwner = companyOwner || company.companyOwner;
+    company.contactNo = contactNo || company.contactNo;
+    company.companyEmail = companyEmail || company.companyEmail;
     company.website = website || company.website;
-    company.phoneNumber = phoneNumber || company.phoneNumber;
+    company.address = address || company.address;
+    company.noOfEmployees = noOfEmployees || company.noOfEmployees;
+    company.noOfApps = noOfApps || company.noOfApps;
+    company.aboutCompany = aboutCompany || company.aboutCompany;
+    company.companyLogo = companyLogo || company.companyLogo;
     company.companyType = companyType || company.companyType;
-    company.branches = branches || company.branches;
-    company.departments = departments || company.departments;
 
     const updatedCompany = await company.save();
     res.status(200).json(updatedCompany);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to update company" });
   }
 };
+
 
 // Delete Company
 exports.deleteCompany = async (req, res) => {
