@@ -7,7 +7,7 @@ require("./conn/conn");
 const app = express();
 const { ExpressError } = require("./utils/ExpressError");
 const cookieParser = require("cookie-parser");
-const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
+// const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 
 
 require("./utils/cronScheduler");  
