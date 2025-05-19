@@ -12,7 +12,7 @@ const fileSchema = new mongoose.Schema({
   },
   sharingDate: {
     type: Date,
-    default: Date.now,
+    default: () => Date.now(),
     required: true
   },
   shareTo: [{

@@ -3,30 +3,35 @@ const mongoose = require("mongoose");
 const leaveRequestSchema = new mongoose.Schema({
   employeeName: {
     type: String,
-    required: true
+    required: true,
+  },
+  employee: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
   },
   leaveType: {
     type: String,
     enum: ["Sick", "Casual", "Earned", "Maternity", "Unpaid"],
-    required: true
+    required: true,
   },
   startDate: {
     type: String,
-    required: true
+    required: true,
   },
   endDate: {
     type: String,
-    required: true
+    required: true,
   },
   reason: String,
   status: {
     type: String,
     enum: ["Pending", "Approved", "Rejected"],
-    default: "Pending"
+    default: "Pending",
   },
   appliedAt: {
     type: Date,
-    default: Date.now
+    default: () => Date.now(),
   },
 });
 

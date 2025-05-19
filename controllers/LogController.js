@@ -1,6 +1,6 @@
-const Log = require("../../models/Logs/LogSchema");
-const { info, warn, error, debug } = require("../../utils/logger");
-const { BadRequestError, NotFoundError } = require("../../utils/ExpressError");
+const Log = require("../models/LogSchema");
+const { info, warn, error, debug } = require("../utils/logger");
+const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
 const saveLog = async (level, message) => {
   const log = new Log({

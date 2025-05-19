@@ -1,96 +1,45 @@
 const Ticket = require("../models/ticketManagementSchema");
+const catchAsync = require("../utils/catchAsync");
+const { NotFoundError } = require("../utils/ExpressError");
 
-// CREATE
-exports.createTicket = async (req, res) => {
-  const {
-    emailAddress,
-    subject,
-    description,
-    attachments,
-    closedBy,
-    ticketID
-  } = req.body;
+// Create Ticket
+exports.createTicket = catchAsync(async (req, res) => {
+  const ticket = new Ticket(req.body);
+  const savedTicket = await ticket.save();
+  res.status(201).json(savedTicket);
+});
 
-  try {
-    const newTicket = new Ticket({
-      emailAddress,
-      subject,
-      description,
-      attachments,
-      closedBy,
-      ticketID
-    });
+// Get All Tickets
+exports.getAllTickets = catchAsync(async (req, res) => {
+  const tickets = await Ticket.find().populate('closedBy');
+  res.status(200).json(tickets);
+});
 
-    const savedTicket = await newTicket.save();
-    res.status(201).json(savedTicket);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to create ticket" });
-  }
-};
+// Get Ticket by ID
+exports.getTicketById = catchAsync(async (req, res) => {
+  const ticket = await Ticket.findById(req.params.id).populate('closedBy');
+  if (!ticket) throw new NotFoundError("Ticket");
+  res.status(200).json(ticket);
+});
 
-// READ ALL
-exports.getAllTickets = async (req, res) => {
-  try {
-    const tickets = await Ticket.find().populate('closedBy');
-    res.status(200).json(tickets);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch tickets" });
-  }
-};
-
-// READ BY ID
-exports.getTicketById = async (req, res) => {
-  try {
-    const ticket = await Ticket.findById(req.params.id).populate('closedBy');
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
-    res.status(200).json(ticket);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch ticket" });
-  }
-};
-
-// UPDATE
-exports.updateTicket = async (req, res) => {
+// Update Ticket
+exports.updateTicket = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const {
-    emailAddress,
-    subject,
-    description,
-    attachments,
-    closedBy,
-    ticketID
-  } = req.body;
+  const updates = req.body;
 
-  try {
-    const ticket = await Ticket.findById(id);
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+  const ticket = await Ticket.findById(id);
+  if (!ticket) throw new NotFoundError("Ticket");
 
-    ticket.emailAddress = emailAddress || ticket.emailAddress;
-    ticket.subject = subject || ticket.subject;
-    ticket.description = description || ticket.description;
-    ticket.attachments = attachments || ticket.attachments;
-    ticket.closedBy = closedBy || ticket.closedBy;
-    ticket.ticketID = ticketID || ticket.ticketID;
+  Object.assign(ticket, updates);
+  const updated = await ticket.save();
 
-    const updated = await ticket.save();
-    res.status(200).json(updated);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to update ticket" });
-  }
-};
+  res.status(200).json(updated);
+});
 
-// DELETE
-exports.deleteTicket = async (req, res) => {
-  try {
-    const ticket = await Ticket.findByIdAndDelete(req.params.id);
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
-    res.status(200).json({ message: "Ticket deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to delete ticket" });
-  }
-};
+// Delete Ticket
+exports.deleteTicket = catchAsync(async (req, res) => {
+  const ticket = await Ticket.findByIdAndDelete(req.params.id);
+  if (!ticket) throw new NotFoundError("Ticket");
+
+  res.status(200).json({ message: "Ticket deleted successfully" });
+});

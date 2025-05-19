@@ -1,191 +1,103 @@
 const User = require("../models/userSchema");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const catchAsync = require("../utils/catchAsync");
+const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
 // Create User
-exports.createUser = async (req, res) => {
+exports.createUser = catchAsync(async (req, res) => {
   const {
-  name, email, timeZone, reportsTo, password, empID, role,
-  phoneNumber, designation, department, branch, empType, joiningDate,
-  about, salary, education, address, experience, DOB,
-  maritalStatus, emergencyContact
-} = req.body;
+    name, email, timeZone, reportsTo, password, empID, role,
+    phoneNumber, designation, department, branch, empType, joiningDate,
+    about, salary, education, address, experience, DOB,
+    maritalStatus, emergencyContact, addedby
+  } = req.body;
 
-  try {
-    // Check if the user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User with this email already exists" });
-      console.log("User already exists")
-    }
-
-    // Hash password before saving
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const newUser = new User({
-      name,
-      email,
-      timeZone,
-      reportsTo,
-      password: hashedPassword,
-      empID,
-      role,
-      phoneNumber,
-      designation,
-      department,
-      branch,
-      empType,
-      joiningDate,
-      about,
-      salary,
-      education, 
-      address, 
-      experience, 
-      DOB,
-      maritalStatus, 
-      emergencyContact
-      });
-
-    const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new BadRequestError("User with this email already exists");
   }
-};
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const newUser = new User({
+    name,
+    email,
+    timeZone,
+    reportsTo,
+    password: hashedPassword,
+    empID,
+    role,
+    phoneNumber,
+    designation, // ObjectId ref
+    department,  // ObjectId ref
+    branch,
+    empType,
+    joiningDate,
+    about,
+    salary,
+    education,
+    address,
+    experience,
+    DOB,
+    maritalStatus,
+    emergencyContact,
+    addedby
+  });
+
+  const savedUser = await newUser.save();
+  res.status(201).json(savedUser);
+});
+
 
 // Get All Users
-exports.getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find()
-    res.status(200).json(users);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+exports.getAllUsers = catchAsync(async (req, res) => {
+  const users = await User.find();
+  res.status(200).json(users);
+});
 
 // Get User by ID
-exports.getUserById = async (req, res) => {
+exports.getUserById = catchAsync(async (req, res) => {
   const { id } = req.params;
+  const user = await User.findById(id);
 
-  try {
-    const user = await User.findById(id)
+  if (!user) throw new NotFoundError("User");
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+  res.status(200).json(user);
+});
 
 // Update User
-exports.updateUser = async (req, res) => {
+exports.updateUser = catchAsync(async (req, res) => {
   const { id } = req.params;
-const {
-  name, email, timeZone, reportsTo, password, empID, role,
-  phoneNumber, designation, department, branch, empType, joiningDate,
-  about, salary, education, address, experience, DOB,
-  maritalStatus, emergencyContact
-} = req.body;
-  try {
-    const user = await User.findById(id);
+  const updates = { ...req.body };
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+  const user = await User.findById(id);
+  if (!user) throw new NotFoundError("User");
+
+  // Only update allowed fields
+  const allowedFields = [
+    "name", "email", "timeZone", "reportsTo", "empID", "role",
+    "phoneNumber", "designation", "department", "branch", "empType", "joiningDate",
+    "about", "salary", "education", "address", "experience", "DOB",
+    "maritalStatus", "emergencyContact", "addedby", "empStatus", "avalaibleLeaves"
+  ];
+
+  allowedFields.forEach(field => {
+    if (updates[field] !== undefined) {
+      user[field] = updates[field];
     }
+  });
 
-    if (password) {
-      user.password = await bcrypt.hash(password, 12); 
-    }
+  const updatedUser = await user.save();
 
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.timeZone = timeZone || user.timeZone;
-    user.reportsTo = reportsTo || user.reportsTo;
-    user.empID = empID || user.empID;
-    user.role = role || user.role;
-    user.phoneNumber = phoneNumber || user.phoneNumber;
-    user.designation = designation || user.designation;
-    user.department = department || user.department;
-    user.branch = branch || user.branch;
-    user.empType = empType || user.empType;
-    user.joiningDate = joiningDate || user.joiningDate;
-
-    user.about = about || user.about;
-    user.salary = salary || user.salary;
-    user.education = education || user.education;
-    user.address = address || user.address;
-    user.experience = experience || user.experience;
-    user.DOB = DOB || user.DOB;
-    user.maritalStatus = maritalStatus || user.maritalStatus;
-    user.emergencyContact = emergencyContact || user.emergencyContact;
-
-    const updatedUser = await user.save();
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+  res.status(200).json(updatedUser);
+});
 
 // Delete User
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = catchAsync(async (req, res) => {
   const { id } = req.params;
+  const user = await User.findByIdAndDelete(id);
 
-  try {
-    const user = await User.findByIdAndDelete(id);
+  if (!user) throw new NotFoundError("User");
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// User Login
-exports.loginUser = async (req, res) => {
-  const { email, password } = req.body;
-  
-  console.log("Login attempt:", { email });
-
-  try {
-    if (!email || !password) {
-      console.warn("Missing email or password");
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      console.warn(`No user found with email: ${email}`);
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      console.warn("Incorrect password attempt");
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const accessToken = user.generateAccessToken();
-    console.log(`User ${email} logged in successfully`);
-
-    res.status(200).json({
-      message: "Login successful",
-      accessToken,
-      user,
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+  res.status(200).json({ message: "User deleted successfully" });
+});

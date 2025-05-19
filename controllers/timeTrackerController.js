@@ -1,100 +1,45 @@
 const TimeTracker = require("../models/timeTrackerSchema");
+const catchAsync = require("../utils/catchAsync");
+const { NotFoundError } = require("../utils/ExpressError");
 
-// CREATE
-exports.createTimeLog = async (req, res) => {
-  const {
-    user,
-    date,
-    checkInTime,
-    checkoutTime,
-    totalHours,
-    status,
-    submittedHours
-  } = req.body;
+// Create Time Log
+exports.createTimeLog = catchAsync(async (req, res) => {
+  const newLog = new TimeTracker(req.body);
+  const savedLog = await newLog.save();
+  res.status(201).json(savedLog);
+});
 
-  try {
-    const newLog = new TimeTracker({
-      user,
-      date,
-      checkInTime,
-      checkoutTime,
-      totalHours,
-      status,
-      submittedHours
-    });
+// Get All Time Logs
+exports.getAllTimeLogs = catchAsync(async (req, res) => {
+  const logs = await TimeTracker.find().populate('user');
+  res.status(200).json(logs);
+});
 
-    const savedLog = await newLog.save();
-    res.status(201).json(savedLog);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to create time log" });
-  }
-};
+// Get Time Log by ID
+exports.getTimeLogById = catchAsync(async (req, res) => {
+  const log = await TimeTracker.findById(req.params.id).populate('user');
+  if (!log) throw new NotFoundError("Time log");
+  res.status(200).json(log);
+});
 
-// READ ALL
-exports.getAllTimeLogs = async (req, res) => {
-  try {
-    const logs = await TimeTracker.find().populate('user');
-    res.status(200).json(logs);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch time logs" });
-  }
-};
-
-// READ BY ID
-exports.getTimeLogById = async (req, res) => {
-  try {
-    const log = await TimeTracker.findById(req.params.id).populate('user');
-    if (!log) return res.status(404).json({ message: "Time log not found" });
-    res.status(200).json(log);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch time log" });
-  }
-};
-
-// UPDATE
-exports.updateTimeLog = async (req, res) => {
+// Update Time Log
+exports.updateTimeLog = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const {
-    user,
-    date,
-    checkInTime,
-    checkoutTime,
-    totalHours,
-    status,
-    submittedHours
-  } = req.body;
+  const updates = req.body;
 
-  try {
-    const log = await TimeTracker.findById(id);
-    if (!log) return res.status(404).json({ message: "Time log not found" });
+  const log = await TimeTracker.findById(id);
+  if (!log) throw new NotFoundError("Time log");
 
-    log.user = user || log.user;
-    log.date = date || log.date;
-    log.checkInTime = checkInTime || log.checkInTime;
-    log.checkoutTime = checkoutTime || log.checkoutTime;
-    log.totalHours = totalHours || log.totalHours;
-    log.status = status || log.status;
-    log.submittedHours = submittedHours || log.submittedHours;
+  Object.assign(log, updates);
+  const updated = await log.save();
 
-    const updated = await log.save();
-    res.status(200).json(updated);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to update time log" });
-  }
-};
+  res.status(200).json(updated);
+});
 
-// DELETE
-exports.deleteTimeLog = async (req, res) => {
-  try {
-    const log = await TimeTracker.findByIdAndDelete(req.params.id);
-    if (!log) return res.status(404).json({ message: "Time log not found" });
-    res.status(200).json({ message: "Time log deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to delete time log" });
-  }
-};
+// Delete Time Log
+exports.deleteTimeLog = catchAsync(async (req, res) => {
+  const log = await TimeTracker.findByIdAndDelete(req.params.id);
+  if (!log) throw new NotFoundError("Time log");
+
+  res.status(200).json({ message: "Time log deleted successfully" });
+});

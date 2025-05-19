@@ -20,18 +20,12 @@ const ticketController = require("../controllers/ticketController");
 const timeTrackerController = require("../controllers/timeTrackerController");
 
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 // User Routes
 router.post("/users", userController.createUser);
 router.get("/users", userController.getAllUsers);
 router.get("/users/:id", userController.getUserById);
 router.put("/users/:id", userController.updateUser);
 router.delete("/users/:id", userController.deleteUser);
-router.post("/login", userController.loginUser);
 
 // Company Routes
 router.post("/companies", companyController.createCompany);
@@ -78,11 +72,11 @@ router.delete("/timeTracker/:id", timeTrackerController.deleteTimeLog);
 
 
 //Leave Routes
-router.post("/createLeave", catchAsync(createLeaveRequest));
-router.get("/getAllLeaves", catchAsync(getLeaveRequests));
-router.get("/getLeave/:id", catchAsync(getLeaveRequestById));
-router.put("/updateLeave/:id", catchAsync(updateLeaveRequest));
-router.delete("/deleteLeave/:id", catchAsync(deleteLeaveRequest));
+// router.post("/createLeave", catchAsync(createLeaveRequest));
+// router.get("/getAllLeaves", catchAsync(getLeaveRequests));
+// router.get("/getLeave/:id", catchAsync(getLeaveRequestById));
+// router.put("/updateLeave/:id", catchAsync(updateLeaveRequest));
+// router.delete("/deleteLeave/:id", catchAsync(deleteLeaveRequest));
 
 
 

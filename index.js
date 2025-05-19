@@ -15,26 +15,28 @@ const PORT = process.env.PORT || 3000;
 
 
 const allRoutes = require("./routes/allRoutes");
-const userRoutes = require("./routes/userRoutes");
+const webRoutes = require("./routes/webRoutesMount");
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
 
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'exp://192.168.18.10:8081'],
+  origin: ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:3002', 'exp://192.168.18.10:8081'],
   credentials: true, 
 };
 
 
 app.use(cookieParser());
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/v1',allRoutes)
+
 
 // API routes
 app.get('/', (req, res) => {
   res.send("Hello");
 });
 
+app.use('/api',allRoutes)
+app.use("/api/web", webRoutes);
 
 // app.use(refreshTokenMiddleware);
 app.all("*", (req, res, next) => {

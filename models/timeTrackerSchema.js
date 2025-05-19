@@ -26,7 +26,10 @@ const timeTrackerSchema = new mongoose.Schema({
   },
   submittedHours: {
     type: Number
-  }
+  },
+  absents: {
+    type: Number
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model("TimeTracker", timeTrackerSchema);
