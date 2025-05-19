@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/userSchema");
 const { UnauthorizedError } = require("../utils/ExpressError");
 const catchAsync = require("../utils/catchAsync");
+const User = require("../models/userModel");
 
 // List of public endpoints that skip auth
 const PUBLIC_PATHS = [
