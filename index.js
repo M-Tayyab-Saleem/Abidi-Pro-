@@ -7,7 +7,7 @@ require("./conn/conn");
 const app = express();
 const { ExpressError } = require("./utils/ExpressError");
 const cookieParser = require("cookie-parser");
-// const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
+const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 
 
 require("./utils/cronScheduler");  
@@ -35,10 +35,11 @@ app.get('/', (req, res) => {
   res.send("Hello");
 });
 
+app.use(refreshTokenMiddleware);
+
 app.use('/api',allRoutes)
 app.use("/api/web", webRoutes);
 
-// app.use(refreshTokenMiddleware);
 app.all("*", (req, res, next) => {
   err = new ExpressError(404, "Page not Found");
   next(err);

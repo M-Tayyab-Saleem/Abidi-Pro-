@@ -1,88 +1,92 @@
-// const jwt = require('jsonwebtoken');
-// const User = require('../models/userSchema');
-// const { UnauthorizedError } = require('../utils/ExpressError');
-// const catchAsync = require('../utils/catchAsync');
+const jwt = require("jsonwebtoken");
+const User = require("../models/userSchema");
+const { UnauthorizedError } = require("../utils/ExpressError");
+const catchAsync = require("../utils/catchAsync");
 
-// const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
- 
-//   if (req.path === '/signin' || 
-//       req.path === '/signup' || 
-//       req.path === '/refresh-token' ||
-//       req.path === '/verify-otp' ||
-//       req.path === '/resend-otp') {
-//     return next();
-//   }
+// List of public endpoints that skip auth
+const PUBLIC_PATHS = [
+  "/auth/login",
+  "/auth/verify-otp",
+  "/auth/resend-otp",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-reset-token",
+];
 
-//   const token = req.cookies.token || 
-//                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
+  const path = req.path.toLowerCase();
 
-  
-//   if (!token) {
-//     return next();
-//   }
+  // Skip auth for public paths
+  if (PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath))) {
+    return next();
+  }
 
-//   try {
-//     jwt.verify(token, process.env.JWT_SECRET);
-//     return next();
-//   } catch (err) {
-//     if (err.name !== 'TokenExpiredError') {
-//       throw new UnauthorizedError('Invalid token');
-//     }
+  const token =
+    req.cookies.token ||
+    (req.headers.authorization?.startsWith("Bearer") &&
+      req.headers.authorization.split(" ")[1]);
 
-   
-//     const refreshToken = req.cookies.refreshToken;
-//     if (!refreshToken) {
-//       throw new UnauthorizedError('Session expired, please login again');
-//     }
+  if (!token) return next(); // Not logged in, proceed unauthenticated
 
-//     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-//     const user = await User.findOne({ 
-//       _id: decoded.id,
-//       refreshToken 
-//     });
+  try {
+    // Try to verify the access token
+    jwt.verify(token, process.env.JWT_SECRET);
+    return next();
+  } catch (err) {
+    if (err.name !== "TokenExpiredError") {
+      throw new UnauthorizedError("Invalid token");
+    }
 
-//     if (!user) {
-//       throw new UnauthorizedError('Invalid refresh token');
-//     }
+    // Token expired: try to refresh
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      throw new UnauthorizedError("Session expired, please login again");
+    }
 
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findOne({
+      _id: decoded.id,
+      refreshToken,
+    });
 
-//     const newToken = jwt.sign(
-//       { id: user._id, email: user.email, role: user.role },
-//       process.env.JWT_SECRET,
-//       { expiresIn: process.env.JWT_EXPIRES_IN }
-//     );
+    if (!user) {
+      throw new UnauthorizedError("Invalid refresh token");
+    }
 
-//     const newRefreshToken = jwt.sign(
-//       { id: user._id },
-//       process.env.JWT_REFRESH_SECRET,
-//       { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-//     );
+    // Generate new tokens
+    const newToken = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "15m" }
+    );
 
-   
-//     user.refreshToken = newRefreshToken;
-//     await user.save();
+    const newRefreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d" }
+    );
 
- 
-//     res.cookie("token", newToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       sameSite: "strict",
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
-//     });
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
-//     res.cookie("refreshToken", newRefreshToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       sameSite: "strict",
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
-//     });
+    res.cookie("token", newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+      maxAge: 15 * 60 * 1000, // 15 mins
+    });
 
- 
-//     req.token = newToken;
-//     req.user = user;
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-//     return next();
-//   }
-// });
+    req.token = newToken;
+    req.user = user;
+    return next();
+  }
+});
 
-// module.exports = refreshTokenMiddleware;
+module.exports = refreshTokenMiddleware;

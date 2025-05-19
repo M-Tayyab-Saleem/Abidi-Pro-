@@ -163,8 +163,19 @@ exports.verifyOtp = async (req, res) => {
 
   const token = generateToken(user);
 
-  res.cookie("token", token, { httpOnly: true });
-  res.cookie("refreshToken", user.refreshToken, { httpOnly: true });
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax",
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.cookie("refreshToken", user.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   res.status(200).json({
     message: "OTP verified",
@@ -503,4 +514,33 @@ exports.logout = async (req, res) => {
   });
 
   res.status(200).json({ message: "Logged out successfully" });
+};
+
+
+exports.getCurrentUser = async (req, res) => {
+  const token = req.cookies.token || (
+    req.headers.authorization?.startsWith("Bearer") &&
+    req.headers.authorization.split(" ")[1]
+  );
+
+  if (!token) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+
+  const user = await User.findById(decoded.id).select("-password");
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json({
+    message: "Authenticated",
+    user,
+  });
 };
