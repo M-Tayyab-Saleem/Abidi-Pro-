@@ -8,6 +8,9 @@ const leaveRequestSchema = new mongoose.Schema({
   employee: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+  },
+  email: {
+    type: String,
     required: true,
   },
   leaveType: {

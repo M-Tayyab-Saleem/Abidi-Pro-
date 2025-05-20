@@ -3,7 +3,6 @@ const { UnauthorizedError } = require("../utils/ExpressError");
 const catchAsync = require("../utils/catchAsync");
 const User = require("../models/userSchema");
 
-// List of public endpoints that skip auth
 const PUBLIC_PATHS = [
   "/auth/login",
   "/auth/verify-otp",
@@ -26,11 +25,16 @@ const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
     (req.headers.authorization?.startsWith("Bearer") &&
       req.headers.authorization.split(" ")[1]);
 
-  if (!token) return next(); // Not logged in, proceed unauthenticated
+  if (!token) return next(); 
 
   try {
-    // Try to verify the access token
-    jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id);
+    if (!user) throw new UnauthorizedError("User not found");
+
+    req.user = user; 
+    req.token = token;
     return next();
   } catch (err) {
     if (err.name !== "TokenExpiredError") {
@@ -53,7 +57,6 @@ const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
       throw new UnauthorizedError("Invalid refresh token");
     }
 
-    // Generate new tokens
     const newToken = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -71,20 +74,20 @@ const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
 
     res.cookie("token", newToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 15 * 60 * 1000, // 15 mins
+      secure: true,
+      sameSite: "None",
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: true,
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    req.user = user; 
     req.token = newToken;
-    req.user = user;
     return next();
   }
 });

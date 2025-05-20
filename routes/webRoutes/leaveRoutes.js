@@ -5,13 +5,15 @@ const catchAsync = require("../../utils/catchAsync");
 
 router
   .route("/")
-  .post(catchAsync(leaveController.createLeaveRequest))
-  .get(catchAsync(leaveController.getLeaveRequests));
+  .post(leaveController.createLeaveRequest)
+  .get(leaveController.getLeaveRequests);
 
 router
   .route("/:id")
-  .get(catchAsync(leaveController.getLeaveRequestById))
-  .put(catchAsync(leaveController.updateLeaveRequest))
-  .delete(catchAsync(leaveController.deleteLeaveRequest));
+  .get(leaveController.getLeaveRequestById)
+  .put(leaveController.updateLeaveRequest)
+  .delete(leaveController.deleteLeaveRequest);
+
+router.put("/:id/status", leaveController.updateLeaveStatus);
 
 module.exports = router;

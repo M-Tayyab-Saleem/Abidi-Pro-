@@ -3,6 +3,8 @@ const router = express.Router();
 const catchAsync = require("../../utils/catchAsync");
 const { isLoggedIn } = require("../../middlewares/authMiddleware");
 const { restrictTo } = require("../../middlewares/roleMiddleware");
+const refreshTokenMiddleware = require('../../middlewares/refreshTokenMiddleware');
+
 
 
 const authController = require("../../controllers/authController");
@@ -13,7 +15,7 @@ router.post("/login", catchAsync(authController.login));
 router.post("/verify-otp", catchAsync(authController.verifyOtp));
 router.post("/resend-otp", catchAsync(authController.resendOtp));
 router.post("/logout",  catchAsync(authController.logout));
-router.get("/me", catchAsync(authController.getCurrentUser));
+router.get("/me", isLoggedIn, catchAsync(authController.getCurrentUser));
 
 // Forgot password routes
 router.post("/forgot-password", catchAsync(authController.forgotPassword));
@@ -22,9 +24,17 @@ router.post("/reset-password/:token", catchAsync(authController.resetPassword));
 
 
 
-
-
-
+router.get('/refresh', refreshTokenMiddleware, (req, res) => {
+  res.status(200).json({
+    message: 'Token refreshed',
+    user: {
+      id: req.user._id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+    },
+  });
+});
 
 
 

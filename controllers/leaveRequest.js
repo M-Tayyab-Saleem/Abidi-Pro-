@@ -4,19 +4,20 @@ const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
 // Create Leave Request
 exports.createLeaveRequest = catchAsync(async (req, res) => {
-  const { employeeName, leaveType, startDate, endDate, reason, status } = req.body;
-
-  if (!employeeName || !leaveType || !startDate || !endDate) {
-    throw new BadRequestError("All required fields must be filled");
+  const { leaveType, startDate, endDate, reason } = req.body;
+  const user = req.user;
+  if (!leaveType || !startDate || !endDate) {
+    throw new BadRequestError("Missing required fields");
   }
 
   const leaveRequest = new LeaveRequest({
-    employeeName,
+    employee: user._id,
+    employeeName: user.name,
+    email: user.email,
     leaveType,
     startDate,
     endDate,
     reason,
-    status
   });
 
   const savedLeaveRequest = await leaveRequest.save();
@@ -67,4 +68,34 @@ exports.deleteLeaveRequest = catchAsync(async (req, res) => {
     throw new NotFoundError("Leave request");
   }
   res.json({ success: true, message: "Leave request deleted" });
+});
+
+
+// Update Leave Status
+exports.updateLeaveStatus = catchAsync(async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
+
+  // if (req.user?.role !== "admin") {
+  //   throw new UnauthorizedError("Only admins can update leave status");
+  // }
+
+  const validStatuses = ["Pending", "Approved", "Rejected"];
+  if (!status || !validStatuses.includes(status)) {
+    throw new BadRequestError("Invalid or missing status");
+  }
+
+  const leaveRequest = await LeaveRequest.findById(id);
+  if (!leaveRequest) {
+    throw new NotFoundError("Leave request not found");
+  }
+
+  leaveRequest.status = status;
+  await leaveRequest.save();
+
+  res.status(200).json({
+    success: true,
+    message: `Leave status updated to ${status}`,
+    data: leaveRequest,
+  });
 });
