@@ -495,3 +495,16 @@ exports.getCurrentUser = async (req, res) => {
   });
 };
 
+exports.getCurrentUser = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
+  const user = await User.findById(req.user.id);
+
+  res.status(200).json({
+    message: "Authenticated",
+    user,
+  });
+};
+
+
