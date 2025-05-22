@@ -21,4 +21,8 @@ router
   .route("/search")
   .get(userController.getUserById);
 
+router
+  .route("/search")
+  .get(userController.getUserById);
+
 module.exports = router;
