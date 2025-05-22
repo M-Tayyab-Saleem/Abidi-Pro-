@@ -152,35 +152,37 @@ exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   const user = await User.findOne({ email });
   if (!user) throw new NotFoundError("User not found");
-  if (!user.otp || user.otpExpires < new Date())
+  if (!user.otp || user.otpExpires < Date.now())
     throw new BadRequestError("OTP expired");
   if (String(user.otp) !== String(otp))
     throw new BadRequestError("Invalid OTP");
 
-  user.otp = null;
-  user.otpExpires = null;
-  user.refreshToken = generateRefreshToken(user);
-  await user.save();
+  user.otp = undefined;
+  user.otpExpires = undefined;
 
   const token = generateToken(user);
+  const refreshToken = generateRefreshToken(user);
+  user.refreshToken = refreshToken;
+  await user.save();
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "Lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+const isProd = false;
 
-  res.cookie("refreshToken", user.refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: isProd,          // ✅ false in dev, true in prod
+  sameSite: isProd ? "None" : "Lax", // ✅ Lax for localhost
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
+
+res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? "None" : "Lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
 
   res.status(200).json({
     message: "OTP verified",
-    token,
     user: {
       id: user._id,
       email: user.email,
@@ -449,35 +451,33 @@ exports.resetPassword = async (req, res) => {
 
 //Logout route
 exports.logout = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-
-  if (!refreshToken) {
-    throw new UnauthorizedError("No token provided for logout");
-  }
+  const { refreshToken } = req.cookies;
+  if (!refreshToken) throw new UnauthorizedError("No refresh token");
 
   const user = await User.findOne({ refreshToken });
+  if (!user) throw new UnauthorizedError("Invalid token");
 
-  if (!user) {
-    throw new UnauthorizedError("Invalid token");
-  }
+  await BlacklistedToken.create({
+    token: refreshToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
 
   user.refreshToken = null;
   await user.save();
 
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "Lax",
   });
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "Lax",
   });
 
   res.status(200).json({ message: "Logged out successfully" });
 };
-
 
 exports.getCurrentUser = async (req, res) => {
   if (!req.user) {
@@ -490,5 +490,4 @@ exports.getCurrentUser = async (req, res) => {
     user,
   });
 };
-
 
