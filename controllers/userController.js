@@ -65,6 +65,7 @@ exports.getUserById = catchAsync(async (req, res) => {
   res.status(200).json(user);
 });
 
+
 // Update User
 exports.updateUser = catchAsync(async (req, res) => {
   const { id } = req.params;
