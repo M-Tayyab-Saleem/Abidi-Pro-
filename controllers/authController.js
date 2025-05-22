@@ -166,9 +166,9 @@ exports.verifyOtp = async (req, res) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "Lax",
-    maxAge: 15 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", user.refreshToken, {
@@ -466,12 +466,12 @@ exports.logout = async (req, res) => {
 
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "Lax",
   });
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "Lax",
   });
 
