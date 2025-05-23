@@ -1,6 +1,6 @@
 const TimeTracker = require("../models/timeTrackerSchema");
 const catchAsync = require("../utils/catchAsync");
-const { NotFoundError } = require("../utils/ExpressError");
+const { NotFoundError, BadRequestError } = require("../utils/ExpressError");
 
 // Create Time Log
 exports.createTimeLog = catchAsync(async (req, res) => {
@@ -77,6 +77,7 @@ exports.checkOut = catchAsync(async (req, res) => {
   const today = new Date().setHours(0, 0, 0, 0);
 
   const log = await TimeTracker.findOne({ user: userId, date: today });
+  console.log(log,"hello")
 
   if (!log || !log.checkInTime) {
     throw new BadRequestError("Cannot check out before checking in.");
