@@ -151,6 +151,7 @@ exports.login = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   const user = await User.findOne({ email });
+  console.log(user.otp,"helloooooooooo")
   if (!user) throw new NotFoundError("User not found");
   if (!user.otp || user.otpExpires < Date.now())
     throw new BadRequestError("OTP expired");

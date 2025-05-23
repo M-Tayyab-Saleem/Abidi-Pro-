@@ -43,3 +43,69 @@ exports.deleteTimeLog = catchAsync(async (req, res) => {
 
   res.status(200).json({ message: "Time log deleted successfully" });
 });
+
+
+
+// 1. Check-in
+exports.checkIn = catchAsync(async (req, res) => {
+  const { userId } = req.body;
+  const today = new Date().setHours(0, 0, 0, 0);
+
+  let existingLog = await TimeTracker.findOne({ user: userId, date: today });
+
+  if (existingLog && existingLog.checkInTime) {
+    throw new BadRequestError("Already checked in today.");
+  }
+
+  if (!existingLog) {
+    existingLog = new TimeTracker({
+      user: userId,
+      date: today,
+      checkInTime: new Date()
+    });
+  } else {
+    existingLog.checkInTime = new Date();
+  }
+
+  const saved = await existingLog.save();
+  res.status(200).json({ message: "Checked in successfully", log: saved });
+});
+
+// 2. Check-out
+exports.checkOut = catchAsync(async (req, res) => {
+  const { userId } = req.body;
+  const today = new Date().setHours(0, 0, 0, 0);
+
+  const log = await TimeTracker.findOne({ user: userId, date: today });
+
+  if (!log || !log.checkInTime) {
+    throw new BadRequestError("Cannot check out before checking in.");
+  }
+
+  if (log.checkOutTime) {
+    throw new BadRequestError("Already checked out today.");
+  }
+
+  log.checkOutTime = new Date();
+
+  // Calculate total hours
+  const totalMs = new Date(log.checkOutTime) - new Date(log.checkInTime);
+  log.totalHours = Math.round((totalMs / (1000 * 60 * 60)) * 100) / 100;
+
+  await log.save();
+  res.status(200).json({ message: "Checked out successfully", log });
+});
+
+// 3. Get Today’s Log for User
+exports.getDailyLog = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const today = new Date().setHours(0, 0, 0, 0);
+
+  const log = await TimeTracker.findOne({ user: userId, date: today });
+
+  if (!log) {
+    return res.status(200).json({ message: "No log found for today." });
+  }
+
+  res.status(200).json(log);
+});
