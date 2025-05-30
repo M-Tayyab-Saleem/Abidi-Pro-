@@ -13,7 +13,8 @@ const ticketSchema = new mongoose.Schema({
     type: String
   },
   attachments: [{
-    type: String 
+    name: String,
+    url: String
   }],
   closedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -24,6 +25,11 @@ const ticketSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true
+  },
+  status: {
+    type: String,
+    enum: ['opened', 'in progress', 'closed'],
+    default: 'Open'
   }
 }, { timestamps: true });
 

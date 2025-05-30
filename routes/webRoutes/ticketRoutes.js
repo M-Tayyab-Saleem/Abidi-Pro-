@@ -1,17 +1,28 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const { storage } = require("../../storageConfig");
+const upload = multer({ storage });
+const { isLoggedIn } = require("../../middlewares/authMiddleware");
+
 const ticketController = require("../../controllers/ticketController");
-const catchAsync = require("../../utils/catchAsync");
 
 router
   .route("/")
-  .post(catchAsync(ticketController.createTicket))
-  .get(catchAsync(ticketController.getAllTickets));
+  .post(isLoggedIn, upload.single("attachment"), ticketController.createTicket)
+  .get(ticketController.getUserTickets);
+
+router
+  .route("/all")
+  .get(ticketController.getAllTickets);
 
 router
   .route("/:id")
-  .get(catchAsync(ticketController.getTicketById))
-  .put(catchAsync(ticketController.updateTicket))
-  .delete(catchAsync(ticketController.deleteTicket));
+  .get(ticketController.getTicketById)
+  .put(ticketController.updateTicket)
+  .delete(ticketController.deleteTicket);
+
+router.patch("/:id/status", ticketController.updateTicketStatus);
+
 
 module.exports = router;
