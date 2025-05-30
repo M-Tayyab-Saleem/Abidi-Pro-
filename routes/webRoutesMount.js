@@ -3,7 +3,6 @@ const router = express.Router();
 
 const authRoutes = require("./webRoutes/authRoutes");
 const userRoutes = require("./webRoutes/userRoutes");
-const fileRoutes = require("./webRoutes/fileRoutes");
 const leaveRoutes = require("./webRoutes/leaveRoutes");
 const projectRoutes = require("./webRoutes/projectRoutes");
 const logRoutes = require("./webRoutes/logRoutes");
@@ -15,7 +14,9 @@ const timeTrackerRoutes = require("./webRoutes/timeTrackerRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
-router.use("/files", fileRoutes);
+router.use('/files/cloudinary', require('./webRoutes/cloudinaryRoutes'));
+router.use('/files/folders',    require('./webRoutes/folderRoutes'));
+router.use('/files/files',      require('./webRoutes/filesRoute'));
 router.use("/leaves", leaveRoutes);
 router.use("/projects", projectRoutes);
 router.use("/logs", logRoutes);

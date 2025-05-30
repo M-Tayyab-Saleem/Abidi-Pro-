@@ -15,7 +15,7 @@ const companyController = require("../controllers/registerCompany");
 const userController = require("../controllers/userController");
 const projectController = require("../controllers/projectController");
 const taskController = require("../controllers/taskController");
-const fileController = require("../controllers/fileManagementController");
+// const fileController = require("../controllers/fileManagementController");
 const ticketController = require("../controllers/ticketController");
 const timeTrackerController = require("../controllers/timeTrackerController");
 
@@ -48,12 +48,12 @@ router.get("/tasks/:id", taskController.getTaskById);
 router.put("/tasks/:id", taskController.updateTask);
 router.delete("/tasks/:id", taskController.deleteTask);
 
-// File Management Controller Routes
-router.post("/file", fileController.createFile);
-router.get("/file", fileController.getAllFiles);
-router.get("/file/:id", fileController.getFileById);
-router.put("/file/:id", fileController.updateFile);
-router.delete("/file/:id", fileController.deleteFile);
+// // File Management Controller Routes
+// router.post("/file", fileController.createFile);
+// router.get("/file", fileController.getAllFiles);
+// router.get("/file/:id", fileController.getFileById);
+// router.put("/file/:id", fileController.updateFile);
+// router.delete("/file/:id", fileController.deleteFile);
 
 // Ticket Routes
 router.post("/ticket", ticketController.createTicket);
