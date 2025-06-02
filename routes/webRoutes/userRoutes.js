@@ -11,6 +11,9 @@ router
   .post(userController.createUser)
   .get(userController.getAllUsers);
 
+router.get("/admins", userController.getAdminUsers);
+
+
 router
   .route("/:id")
   .get(userController.getUserById)
@@ -24,5 +27,7 @@ router
 router
   .route("/search")
   .get(userController.getUserById);
+
+
 
 module.exports = router;

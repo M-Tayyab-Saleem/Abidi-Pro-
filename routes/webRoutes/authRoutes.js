@@ -10,7 +10,7 @@ router.post("/verify-otp", catchAsync(authController.verifyOtp));
 router.post("/resend-otp", catchAsync(authController.resendOtp));
 router.post("/logout", catchAsync(authController.logout));
 router.get("/me", isLoggedIn, catchAsync(authController.getCurrentUser));
-router.get("/check-session", isLoggedIn, catchAsync(authController.getCurrentUser));
+router.get("/check-session", catchAsync(authController.getCurrentUser));
 
 // Password Reset
 router.post("/forgot-password", catchAsync(authController.forgotPassword));

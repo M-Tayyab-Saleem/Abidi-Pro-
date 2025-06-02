@@ -102,3 +102,9 @@ exports.deleteUser = catchAsync(async (req, res) => {
 
   res.status(200).json({ message: "User deleted successfully" });
 });
+
+
+exports.getAdminUsers = catchAsync(async (req, res) => {
+  const admins = await User.find({ role: `Admin` });
+  res.status(200).json(admins);
+});

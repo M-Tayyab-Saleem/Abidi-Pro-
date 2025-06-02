@@ -31,6 +31,7 @@ exports.createTicket = catchAsync(async (req, res) => {
 
   const ticket = new Ticket(newTicket);
   ticket.status = 'opened'; 
+  ticket.priority = 'Medium Priority'; 
   const savedTicket = await ticket.save();
   res.status(201).json(savedTicket);
 });
@@ -100,6 +101,76 @@ exports.updateTicketStatus = catchAsync(async (req, res) => {
   if (!ticket) {
     return res.status(404).json({ message: "Ticket not found" });
   }
+
+  res.status(200).json(ticket);
+});
+
+
+// PATCH /tickets/:id/priority
+exports.updateTicketPriority = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { priority } = req.body;
+
+  if (!["High Priority", "Medium Priority", "Low Priority"].includes(priority)) {
+    return res.status(400).json({ message: "Invalid priority" });
+  }
+
+  const ticket = await Ticket.findByIdAndUpdate(
+    id,
+    { priority },
+    { new: true }
+  );
+
+  if (!ticket) {
+    return res.status(404).json({ message: "Ticket not found" });
+  }
+
+  res.status(200).json(ticket);
+});
+
+
+exports.updateTicketAssignee = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { assignedTo } = req.body;
+
+  if (!assignedTo || typeof assignedTo !== 'string') {
+    return res.status(400).json({ message: "Assigned user ID is required and must be a string" });
+  }
+
+  const ticket = await Ticket.findByIdAndUpdate(
+    id,
+    { assignedTo },
+    { new: true }
+  );
+
+  if (!ticket) {
+    return res.status(404).json({ message: "Ticket not found" });
+  }
+
+  res.status(200).json(ticket);
+});
+
+
+exports.addTicketResponse = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { content, avatar } = req.body;
+
+  console.log("Adding response to ticket:", id, "Content:", content, "Avatar:", avatar);
+
+  const ticket = await Ticket.findById(id);
+  if (!ticket) throw new NotFoundError("Ticket");
+
+  console.log(req.user, "User making the response:", req.user);
+
+  const newResponse = {
+    author: req.user?.name || "Unknown",
+    content,
+    time: new Date().toISOString(),
+    avatar
+  };
+
+  ticket.responses.push(newResponse);
+  await ticket.save();
 
   res.status(200).json(ticket);
 });

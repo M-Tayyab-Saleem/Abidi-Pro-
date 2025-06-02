@@ -10,41 +10,44 @@ const PUBLIC_PATHS = [
   "/auth/forgot-password",
   "/auth/reset-password",
   "/auth/verify-reset-token",
-  "/auth/check-session", 
+  "/auth/check-session",
 ];
 
 const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
   const path = req.path.toLowerCase();
 
-  // Skip middleware for public routes
   if (PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath))) {
     return next();
   }
 
-  // Try getting token from cookie or Authorization header
   const token =
     req.cookies.token ||
     (req.headers.authorization?.startsWith("Bearer") &&
       req.headers.authorization.split(" ")[1]);
 
-  if (!token) return next(); // Let isLoggedIn handle missing token
+  if (!token) return next(); 
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) throw new UnauthorizedError("User not found");
 
-    req.user = user;
+    req.user = {
+      id: user._id.toString(),
+      role: user.role,
+      name: user.name,
+    }; 
+    
     req.token = token;
+
     return next();
+
   } catch (err) {
     if (err.name !== "TokenExpiredError") {
-      return next(); // Let isLoggedIn handle other JWT errors
+      return next();
     }
 
-    // Token expired → try refreshing
     const refreshToken = req.cookies.refreshToken;
-
 
     if (!refreshToken) {
       res.clearCookie("token");
@@ -64,7 +67,12 @@ const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
 
       // Generate new tokens
       const newToken = jwt.sign(
-        { id: user._id, email: user.email, role: user.role },
+        {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          name: user.name,
+        },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || "15m" }
       );
@@ -78,23 +86,27 @@ const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
       user.refreshToken = newRefreshToken;
       await user.save();
 
-      const isProd = false;
+      const isProd = process.env.NODE_ENV === "production";
 
       res.cookie("token", newToken, {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? "None" : "Lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 15 minutes
+        maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? "None" : "Lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      req.user = user;
+      req.user = {
+        id: user._id.toString(),
+        role: user.role,
+        name: user.name,
+      }; 
       req.token = newToken;
       return next();
     } catch (refreshErr) {

@@ -23,6 +23,9 @@ router
   .delete(ticketController.deleteTicket);
 
 router.patch("/:id/status", ticketController.updateTicketStatus);
+router.patch("/:id/priority", ticketController.updateTicketPriority);
+router.patch("/:id/assign", ticketController.updateTicketAssignee);
+router.post("/:id/response", ticketController.addTicketResponse);
 
 
 module.exports = router;
