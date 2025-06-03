@@ -20,15 +20,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Utility functions
+const generateToken = require("../utils/token").generateAccessToken;
+const generateRefreshToken = require("../utils/token").generateRefreshToken;
+
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
-const generateToken = (user) =>
-  jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-const generateRefreshToken = (user) =>
-  jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
 const generateResetToken = () => crypto.randomBytes(32).toString("hex");
 
 // 1. Login 
@@ -151,39 +147,30 @@ exports.login = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   const user = await User.findOne({ email });
-  console.log(user.otp,"helloooooooooo")
-  if (!user) throw new NotFoundError("User not found");
-  if (!user.otp || user.otpExpires < Date.now())
-    throw new BadRequestError("OTP expired");
-  if (String(user.otp) !== String(otp))
-    throw new BadRequestError("Invalid OTP");
+  if (!user || !user.otp || user.otpExpires < Date.now())
+    throw new BadRequestError("Invalid or expired OTP");
+  if (String(user.otp) !== String(otp)) throw new BadRequestError("Invalid OTP");
 
   user.otp = undefined;
+  user.otpGeneratedAt = undefined;
   user.otpExpires = undefined;
 
-  const token = generateToken(user);
+  const accessToken = generateToken(user);
   const refreshToken = generateRefreshToken(user);
   user.refreshToken = refreshToken;
   await user.save();
 
-const isProd = false;
-
-res.cookie("token", token, {
-  httpOnly: true,
-  secure: isProd,          // ✅ false in dev, true in prod
-  sameSite: isProd ? "None" : "Lax", // ✅ Lax for localhost
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
-
-res.cookie("refreshToken", refreshToken, {
-  httpOnly: true,
-  secure: isProd,
-  sameSite: isProd ? "None" : "Lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+  const isProd = process.env.NODE_ENV === "production";
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "None" : "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   res.status(200).json({
     message: "OTP verified",
+    token: accessToken,
     user: {
       id: user._id,
       email: user.email,
@@ -453,34 +440,45 @@ exports.resetPassword = async (req, res) => {
 //Logout route
 exports.logout = async (req, res) => {
   const { refreshToken } = req.cookies;
-  if (!refreshToken) throw new UnauthorizedError("No refresh token");
 
+  if (!refreshToken) throw new UnauthorizedError("No refresh token provided");
+
+  // Find user by refresh token
   const user = await User.findOne({ refreshToken });
-  if (!user) throw new UnauthorizedError("Invalid token");
+  if (!user) throw new UnauthorizedError("Invalid refresh token");
 
+  // Blacklist refresh token
   await BlacklistedToken.create({
     token: refreshToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
   });
 
+  // Blacklist access token if present
+  const accessToken = req.headers.authorization?.split(" ")[1];
+  if (accessToken) {
+    await BlacklistedToken.create({
+      token: accessToken,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+    });
+  }
+
+  // Clear refresh token on user model
   user.refreshToken = null;
   await user.save();
 
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Lax",
-  });
+  // Clear cookie
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "Lax",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   });
 
   res.status(200).json({ message: "Logged out successfully" });
 };
 
+
 exports.getCurrentUser = async (req, res) => {
+  
   if (!req.user) {
     return res.status(401).json({ message: "User not authenticated" });
   }
@@ -492,3 +490,15 @@ exports.getCurrentUser = async (req, res) => {
   });
 };
 
+
+exports.refreshAccessToken = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (!refreshToken) throw new UnauthorizedError("No refresh token provided");
+
+  const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  const user = await User.findById(payload.id);
+  if (!user) throw new UnauthorizedError("User not found");
+
+  const accessToken = generateToken(user); // Use the correct function
+  return res.status(200).json({ accessToken, user });
+};

@@ -25,7 +25,7 @@ router
 router.patch("/:id/status", ticketController.updateTicketStatus);
 router.patch("/:id/priority", ticketController.updateTicketPriority);
 router.patch("/:id/assign", ticketController.updateTicketAssignee);
-router.post("/:id/response", ticketController.addTicketResponse);
+router.post("/:id/response",isLoggedIn, ticketController.addTicketResponse);
 
 
 module.exports = router;

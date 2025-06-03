@@ -1,118 +1,104 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/userSchema");
 const { UnauthorizedError } = require("../utils/ExpressError");
 const catchAsync = require("../utils/catchAsync");
-const User = require("../models/userSchema");
-
-const PUBLIC_PATHS = [
-  "/auth/login",
-  "/auth/verify-otp",
-  "/auth/resend-otp",
-  "/auth/forgot-password",
-  "/auth/reset-password",
-  "/auth/verify-reset-token",
-  "/auth/check-session",
-];
+const BlacklistedToken = require("../models/BlacklistedTokenSchema");
 
 const refreshTokenMiddleware = catchAsync(async (req, res, next) => {
-  const path = req.path.toLowerCase();
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") && authHeader.split(" ")[1];
 
-  if (PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath))) {
-    return next();
+  if (!token) return next();
+
+  const isBlacklisted = await BlacklistedToken.findOne({ token });
+  if (isBlacklisted) {
+    return next(new UnauthorizedError("Access token is revoked"));
   }
-
-  const token =
-    req.cookies.token ||
-    (req.headers.authorization?.startsWith("Bearer") &&
-      req.headers.authorization.split(" ")[1]);
-
-  if (!token) return next(); 
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) throw new UnauthorizedError("User not found");
-
-    req.user = {
-      id: user._id.toString(),
-      role: user.role,
-      name: user.name,
-    }; 
-    
+    req.user = decoded;
     req.token = token;
-
     return next();
-
   } catch (err) {
     if (err.name !== "TokenExpiredError") {
-      return next();
+      return next(new UnauthorizedError("Invalid token"));
     }
 
     const refreshToken = req.cookies.refreshToken;
-
     if (!refreshToken) {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      return next(new UnauthorizedError("Session expired. Please login again."));
+      return next(new UnauthorizedError("Session expired, please login again"));
+    }
+
+    const isRefreshBlacklisted = await BlacklistedToken.findOne({ token: refreshToken });
+    if (isRefreshBlacklisted) {
+      return next(new UnauthorizedError("Session revoked, please login again"));
     }
 
     try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-      const user = await User.findOne({ _id: decoded.id, refreshToken });
-
-      if (!user) {
-        res.clearCookie("token");
-        res.clearCookie("refreshToken");
-        return next(new UnauthorizedError("Invalid refresh token."));
+      const decodedRefresh = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      
+      // Enhanced logging for debugging
+      console.log("Decoded refresh token:", { 
+        id: decodedRefresh.id, 
+        exp: new Date(decodedRefresh.exp * 1000) 
+      });
+      
+      // First, find user by ID only to check if user exists
+      const userExists = await User.findById(decodedRefresh.id);
+      if (!userExists) {
+        console.log("User not found with ID:", decodedRefresh.id);
+        return next(new UnauthorizedError("User not found, please login again"));
       }
 
-      // Generate new tokens
+      // Then check if refresh token matches
+      if (userExists.refreshToken !== refreshToken) {
+        console.log("Refresh token mismatch for user:", decodedRefresh.id);
+        console.log("Expected:", userExists.refreshToken?.substring(0, 20) + "...");
+        console.log("Received:", refreshToken.substring(0, 20) + "...");
+        return next(new UnauthorizedError("Session invalid, please login again"));
+      }
+
+      const user = userExists; // We already have the user
+
+      // Standardized token payload
       const newToken = jwt.sign(
-        {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          name: user.name,
-        },
+        { id: user._id, email: user.email, role: user.role, name: user.name },
         process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || "15m" }
+        { expiresIn: "15m" }
       );
 
-      const newRefreshToken = jwt.sign(
+      const newRefresh = jwt.sign(
         { id: user._id },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d" }
+        { expiresIn: "7d" }
       );
 
-      user.refreshToken = newRefreshToken;
+      // Update user with new refresh token
+      user.refreshToken = newRefresh;
       await user.save();
 
-      const isProd = process.env.NODE_ENV === "production";
-
-      res.cookie("token", newToken, {
+      // Set new refresh token cookie
+      res.cookie("refreshToken", newRefresh, {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "None" : "Lax",
-        maxAge: 15 * 60 * 1000,
-      });
-
-      res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "None" : "Lax",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      req.user = {
-        id: user._id.toString(),
+      req.user = { 
+        id: user._id, 
+        email: user.email,
         role: user.role,
-        name: user.name,
-      }; 
+        name: user.name
+      };
       req.token = newToken;
+
+      console.log("Token refreshed successfully for user:", user.email);
       return next();
-    } catch (refreshErr) {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      return next(new UnauthorizedError("Session expired. Please login again."));
+    } catch (refreshError) {
+      console.error("Refresh token error:", refreshError.message);
+      return next(new UnauthorizedError("Session invalid, please login again"));
     }
   }
 });

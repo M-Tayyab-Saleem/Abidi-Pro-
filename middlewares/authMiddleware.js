@@ -1,33 +1,41 @@
 const jwt = require('jsonwebtoken');
 const { UnauthorizedError } = require('../utils/ExpressError');
-const { error } = require('../utils/logger');
 const BlacklistedToken = require('../models/BlacklistedTokenSchema');
-
+const User = require('../models/userSchema');
 
 const isLoggedIn = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next(new UnauthorizedError("Please login first."));
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  const isBlacklisted = await BlacklistedToken.findOne({ token });
+  if (isBlacklisted) {
+    return next(new UnauthorizedError("Access token has been revoked"));
+  }
+
   try {
-    let token = req.cookies?.token;
-
-    if (!token && req.headers.authorization?.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-      error('No authentication token found');
-      throw new UnauthorizedError('Please login first.');
-    }
-
-    const blacklistedToken = await BlacklistedToken.findOne({ token });
-    if (blacklistedToken) {
-      throw new UnauthorizedError('Token is no longer valid. Please login again.');
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    const user = await User.findById(decoded.id).select("name email role");
+    if (!user) {
+      return next(new UnauthorizedError("User not found."));
+    }
+
+    req.user = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    req.token = token;
     next();
   } catch (err) {
-    error(`Auth Middleware Error: ${err.message}`);
-    next(err);
+    return next(new UnauthorizedError("Invalid or expired access token"));
   }
 };
 
