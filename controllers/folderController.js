@@ -5,6 +5,8 @@ const File = require('../models/file');
 exports.getContents = async (req, res, next) => {
   try {
     const { id } = req.params;
+        console.log("getting folder and files ",id)
+
     const userId = req.user?.id || req.query.userId;
    
 
