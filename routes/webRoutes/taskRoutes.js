@@ -5,13 +5,13 @@ const catchAsync = require("../../utils/catchAsync");
 
 router
   .route("/")
-  .post(catchAsync(taskController.createTask))
-  .get(catchAsync(taskController.getAllTasks));
+  .post(taskController.createTask)
+  .get(taskController.getAllTasks);
 
 router
   .route("/:id")
-  .get(catchAsync(taskController.getTaskById))
-  .put(catchAsync(taskController.updateTask))
-  .delete(catchAsync(taskController.deleteTask));
+  .get(taskController.getTaskById)
+  .put(taskController.updateTask)
+  .delete(taskController.deleteTask);
 
 module.exports = router;
