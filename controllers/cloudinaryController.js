@@ -3,6 +3,8 @@ const cloudinary = require('../config/cloudinaryConfig');
 
 exports.signUpload = (req, res) => {
   const { folderPath, publicIdBase } = req.body;
+  try{
+  console.log(folderPath,"hello"+publicIdBase)
   const timestamp = Math.floor(Date.now()/1000);
   const paramsToSign = {
     folder:    folderPath,
@@ -16,4 +18,8 @@ exports.signUpload = (req, res) => {
     folder:    folderPath,
     public_id: paramsToSign.public_id
   });
+  }
+  catch(err){
+  console.log(err)
+}
 };
