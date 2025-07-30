@@ -35,13 +35,6 @@ const projectSchema = new mongoose.Schema({
     enum: ['Not Started', 'In Progress', 'Completed', 'On Hold'],
     default: 'Not Started'
   },
-  tasks: [{
-    type: String,
-  }],
-  completedTasks: {
-    type: Number,
-    default: 0
-  },
   department: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Department',    
