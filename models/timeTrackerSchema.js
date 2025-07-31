@@ -1,4 +1,3 @@
-// models/timeTrackerSchema.js
 const mongoose = require("mongoose");
 
 const timeTrackerSchema = new mongoose.Schema({
@@ -10,7 +9,7 @@ const timeTrackerSchema = new mongoose.Schema({
   date: {
     type: Date,
     required: true,
-    default: () => new Date().setHours(0, 0, 0, 0)  // Reset time to 00:00:00
+    default: () => new Date().setHours(0, 0, 0, 0)
   },
   checkInTime: {
     type: Date

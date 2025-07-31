@@ -51,85 +51,129 @@ exports.login = async (req, res) => {
     to: email,
     subject: "Your OTP for Via Ride",
     html: `
-          <html>
-            <head>
-              <style>
-                body {
-                  font-family: Arial, sans-serif;
-                  background-color: #f4f4f4;
-                  margin: 0;
-                  padding: 0;
-                }
-                .email-container {
-                  width: 100%;
-                  max-width: 600px;
-                  margin: 0 auto;
-                  background-color: #ffffff;
-                  border-radius: 8px;
-                  padding: 30px;
-                  box-sizing: border-box;
-                }
-                .header {
-                  text-align: center;
-                  padding: 10px;
-                  border-bottom: 2px solid #f1f1f1;
-                }
-                .header img {
-                  max-width: 150px;
-                  height: auto;
-                }
-                .content {
-                  padding: 20px;
-                  text-align: center;
-                }
-                .otp {
-                  font-size: 24px;
-                  font-weight: bold;
-                  color: #4CAF50;
-                  background-color: #e0f7e0;
-                  padding: 15px;
-                  border-radius: 5px;
-                }
-                .cta {
-                  background-color: #4CAF50;
-                  color: white;
-                  padding: 15px;
-                  text-decoration: none;
-                  font-weight: bold;
-                  display: inline-block;
-                  border-radius: 5px;
-                  margin-top: 20px;
-                }
-                .footer {
-                  text-align: center;
-                  font-size: 12px;
-                  color: #888;
-                  margin-top: 30px;
-                }
-                .footer p {
-                  margin: 0;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="email-container">
-                <div class="header">
-                  <img src="https://yourdomain.com/logo.png" alt="Abidi ProLogo" />
-                </div>
-                <div class="content">
-                  <h2>Welcome to Via Ride!</h2>
-                  <p>We are excited to help you with your journey. To complete your login, please use the following OTP (One-Time Password) to verify your account:</p>
-                  <div class="otp">${otp}</div>
-                  <p>This OTP will expire in 5 minute. Please enter it promptly to continue.</p>
-                  <a href="https://yourdomain.com" class="cta">Go to Via Ride</a>
-                </div>
-                <div class="footer">
-                  <p>If you did not request this OTP, please ignore this email or contact support.</p>
-                  <p>Via Ride, Inc. | All rights reserved.</p>
-                </div>
-              </div>
-            </body>
-          </html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background-color: #6c5ce7;
+      padding: 25px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 180px;
+      height: auto;
+    }
+    .content {
+      padding: 30px;
+      text-align: center;
+    }
+    h2 {
+      color: #6c5ce7;
+      margin-top: 0;
+    }
+    .otp-container {
+      margin: 25px 0;
+    }
+    .otp {
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 5px;
+      color: #6c5ce7;
+      background-color: #f3f1ff;
+      padding: 20px;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 15px 0;
+      border: 1px dashed #6c5ce7;
+    }
+    .cta {
+      background-color: #6c5ce7;
+      color: white;
+      padding: 14px 28px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      border-radius: 50px;
+      margin: 20px 0;
+      transition: all 0.3s ease;
+    }
+    .cta:hover {
+      background-color: #5649c0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(108, 92, 231, 0.3);
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #eee;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .highlight {
+      color: #6c5ce7;
+      font-weight: bold;
+    }
+    .expiry-note {
+      font-size: 14px;
+      color: #e74c3c;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://yourdomain.com/logo.png" alt="Abidi Pro Logo" />
+    </div>
+    <div class="content">
+      <h2>Your Abidi Pro Verification Code</h2>
+      <p>Hello there!</p>
+      <p>Thank you for choosing <span class="highlight">Abidi Pro</span>. To complete your login, please use the following verification code:</p>
+      
+      <div class="otp-container">
+        <div class="otp">${otp}</div>
+      </div>
+      
+      <p class="expiry-note">This code will expire in 5 minutes</p>
+      <p>For your security, please don't share this code with anyone.</p>
+      
+      
+      <p style="font-size: 14px; margin-top: 30px;">
+        Didn't request this code?<br>
+        Please ignore this email or <a href="mailto:" style="color: #6c5ce7;">contact our support team</a>.
+      </p>
+    </div>
+    <div class="footer">
+      <p>© 2023 Abidi Pro. All rights reserved.</p>
+      <p>123 Business Ave, Suite 456, Tech City, TC 10001</p>
+      <p>
+        <a href="#" style="color: #6c5ce7; text-decoration: none;">Privacy Policy</a> | 
+        <a href="#" style="color: #6c5ce7; text-decoration: none;">Terms of Service</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
         `,
   };
 
@@ -198,84 +242,140 @@ exports.resendOtp = async (req, res) => {
     to: email,
     subject: "Resent OTP",
     html: `<html>
-              <head>
-                <style>
-                  body {
-                    font-family: Arial, sans-serif;
-                    background-color: #f4f4f4;
-                    margin: 0;
-                    padding: 0;
-                  }
-                  .email-container {
-                    width: 100%;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    background-color: #ffffff;
-                    border-radius: 8px;
-                    padding: 30px;
-                    box-sizing: border-box;
-                  }
-                  .header {
-                    text-align: center;
-                    padding: 10px;
-                    border-bottom: 2px solid #f1f1f1;
-                  }
-                  .header img {
-                    max-width: 150px;
-                    height: auto;
-                  }
-                  .content {
-                    padding: 20px;
-                    text-align: center;
-                  }
-                  .otp {
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #4CAF50;
-                    background-color: #e0f7e0;
-                    padding: 15px;
-                    border-radius: 5px;
-                  }
-                  .cta {
-                    background-color: #4CAF50;
-                    color: white;
-                    padding: 15px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    display: inline-block;
-                    border-radius: 5px;
-                    margin-top: 20px;
-                  }
-                  .footer {
-                    text-align: center;
-                    font-size: 12px;
-                    color: #888;
-                    margin-top: 30px;
-                  }
-                  .footer p {
-                    margin: 0;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="email-container">
-                  <div class="header">
-                    <img src="https://yourdomain.com/logo.png" alt="Abidi ProLogo" />
-                  </div>
-                  <div class="content">
-                    <h2>Welcome to Via Ride!</h2>
-                    <p>We are excited to help you with your journey. To complete your login, please use the following OTP (One-Time Password) to verify your account:</p>
-                    <div class="otp">${otp}</div>
-                    <p>This OTP will expire in 5 minute. Please enter it promptly to continue.</p>
-                    <a href="https://yourdomain.com" class="cta">Go to Via Ride</a>
-                  </div>
-                  <div class="footer">
-                    <p>If you did not request this OTP, please ignore this email or contact support.</p>
-                    <p>Via Ride, Inc. | All rights reserved.</p>
-                  </div>
-                </div>
-              </body>
-            </html> `,
+<head>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      line-height: 1.6;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    .header {
+      background: linear-gradient(135deg, #6c5ce7, #4b3ac2);
+      padding: 25px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 180px;
+      height: auto;
+    }
+    .content {
+      padding: 30px;
+      text-align: center;
+    }
+    h2 {
+      color: #6c5ce7;
+      margin-top: 0;
+      font-size: 24px;
+    }
+    .otp-container {
+      margin: 25px 0;
+    }
+    .otp {
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 8px;
+      color: #6c5ce7;
+      background-color: #f3f1ff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      display: inline-block;
+      margin: 20px 0;
+      border: 2px solid #e0dcff;
+      box-shadow: 0 4px 10px rgba(108, 92, 231, 0.1);
+    }
+    .cta {
+      background: linear-gradient(to right, #6c5ce7, #4b3ac2);
+      color: white;
+      padding: 15px 32px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      border-radius: 50px;
+      margin: 25px 0;
+      transition: all 0.3s ease;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+    }
+    .cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
+    }
+    .footer {
+      text-align: center;
+      font-size: 13px;
+      color: #777;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-top: 1px solid #eee;
+    }
+    .footer p {
+      margin: 8px 0;
+    }
+    .highlight {
+      color: #6c5ce7;
+      font-weight: bold;
+    }
+    .expiry-note {
+      font-size: 14px;
+      color: #e74c3c;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+    .security-note {
+      font-size: 13px;
+      color: #666;
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://abidipro.com/logo.png" alt="Abidi Pro Logo" />
+    </div>
+    <div class="content">
+      <h2>Your Abidi Pro Verification Code</h2>
+      <p>Hello valued user,</p>
+      <p>Thank you for using <span class="highlight">Abidi Pro</span>. To authenticate your account, please use the following one-time verification code:</p>
+      
+      <div class="otp-container">
+        <div class="otp">${otp}</div>
+      </div>
+      
+      <p class="expiry-note">⚠️ Expires in 5 minutes</p>
+      
+      <a href="https://abidipro.com/login" class="cta">Continue to Abidi Pro</a>
+      
+      <div class="security-note">
+        <p>For your security, never share this code with anyone.</p>
+        <p>If you didn't request this, please <a href="mailto:support@abidipro.com" style="color: #6c5ce7;">contact our support team</a> immediately.</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>© 2023 Abidi Pro. All rights reserved.</p>
+      <p>123 Innovation Drive, Tech City, TC 10101</p>
+      <p>
+        <a href="https://abidipro.com/privacy" style="color: #6c5ce7; text-decoration: none; margin: 0 10px;">Privacy Policy</a>
+        <a href="https://abidipro.com/terms" style="color: #6c5ce7; text-decoration: none; margin: 0 10px;">Terms of Service</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
   };
 
   await transporter.sendMail(mailOptions);
@@ -304,83 +404,125 @@ exports.forgotPassword = async (req, res) => {
   user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
   await user.save();
   const resetURL = `${process.env.FRONTEND_URL}/auth/reset-password/${resetToken}`;
-  console.log("resetToken", resetToken);
 
   const mailOptions = {
     from: "no-reply@yourdomain.com",
     to: email,
     subject: "Reset Password",
     html: `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              background-color: #f4f4f4;
-              margin: 0;
-              padding: 0;
-            }
-            .email-container {
-              width: 100%;
-              max-width: 600px;
-              margin: 0 auto;
-              background-color: #ffffff;
-              border-radius: 8px;
-              padding: 30px;
-              box-sizing: border-box;
-            }
-            .header {
-              text-align: center;
-              padding: 10px;
-              border-bottom: 2px solid #f1f1f1;
-            }
-            .header img {
-              max-width: 150px;
-              height: auto;
-            }
-            .content {
-              padding: 20px;
-              text-align: center;
-            }
-            .reset-button {
-              background-color: #4CAF50;
-              color: white;
-              padding: 15px 30px;
-              text-decoration: none;
-              font-weight: bold;
-              display: inline-block;
-              border-radius: 5px;
-              margin: 20px 0;
-            }
-            .footer {
-              text-align: center;
-              font-size: 12px;
-              color: #888;
-              margin-top: 30px;
-            }
-            .footer p {
-              margin: 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-container">
-            <div class="header">
-              <img src="https://yourdomain.com/logo.png" alt="Abidi Pro Logo" />
-            </div> 
-            <div class="content">
-              <h2>Password Reset Request</h2>
-              <p>We received a request to reset your password. Click the button below to set a new password:</p>
-              <a href="${resetURL}" class="reset-button">Reset Password</a>
-              <p>If you did not request a password reset, please ignore this email or contact support if you're concerned.</p>
-              <p>This link will expire in 10 minutes for security reasons.</p>
-            </div>
-            <div class="footer">
-              <p>Via Ride, Inc. | All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background-color: #6c5ce7;
+      padding: 25px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 180px;
+      height: auto;
+    }
+    .content {
+      padding: 30px;
+      text-align: center;
+    }
+    h2 {
+      color: #6c5ce7;
+      margin-top: 0;
+    }
+    .reset-button {
+      background-color: #6c5ce7;
+      color: white;
+      padding: 16px 32px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      border-radius: 50px;
+      margin: 25px 0;
+      transition: all 0.3s ease;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+    }
+    .reset-button:hover {
+      background-color: #5649c0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #eee;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .highlight {
+      color: #6c5ce7;
+      font-weight: bold;
+    }
+    .expiry-note {
+      font-size: 14px;
+      color: #e74c3c;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+    .security-note {
+      font-size: 13px;
+      color: #666;
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://abidipro.com/logo.png" alt="Abidi Pro Logo" />
+    </div>
+    <div class="content">
+      <h2>Password Reset Request</h2>
+      <p>Hello Abidi Pro user,</p>
+      <p>We received a request to reset your password for your <span class="highlight">Abidi Pro</span> account. Click the button below to set a new password:</p>
+      
+      <a href="${resetURL}" class="reset-button">Reset Password</a>
+      
+      <p class="expiry-note">This link will expire in 10 minutes</p>
+      
+      <div class="security-note">
+        <p>If you didn't request this password reset, please ignore this email or <a href="mailto:support@abidipro.com" style="color: #6c5ce7;">contact our support team</a> if you have concerns.</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>© 2023 Abidi Pro. All rights reserved.</p>
+      <p>123 Business Ave, Suite 456, Tech City, TC 10001</p>
+      <p>
+        <a href="${process.env.FRONTEND_URL}/auth/login" style="color: #6c5ce7; text-decoration: none;">Privacy Policy</a> | 
+        <a href="${process.env.FRONTEND_URL}/auth/login" style="color: #6c5ce7; text-decoration: none;">Terms of Service</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
     `,
   };
   await transporter.sendMail(mailOptions);
@@ -479,7 +621,7 @@ exports.logout = async (req, res) => {
 
 
 exports.getCurrentUser = async (req, res) => {
-  
+
   if (!req.user) {
     return res.status(401).json({ message: "User not authenticated" });
   }

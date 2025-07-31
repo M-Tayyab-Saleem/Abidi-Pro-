@@ -10,6 +10,7 @@ const companyRoutes = require("./webRoutes/companyRoutes");
 const taskRoutes = require("./webRoutes/taskRoutes");
 const ticketRoutes = require("./webRoutes/ticketRoutes");
 const timeTrackerRoutes = require("./webRoutes/timeTrackerRoutes");
+const holidayRoutes = require("./webRoutes/holidayRoutes");
 const { isLoggedIn } = require("../middlewares/authMiddleware");
 
 
@@ -25,5 +26,6 @@ router.use("/companies", companyRoutes);
 router.use("/tasks", taskRoutes);
 router.use("/tickets", ticketRoutes);
 router.use("/timetrackers", timeTrackerRoutes);
+router.use("/holidays", holidayRoutes);
 
 module.exports = router;
