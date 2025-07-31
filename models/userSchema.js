@@ -123,9 +123,25 @@ const userSchema = new mongoose.Schema(
     },
     avalaibleLeaves: {
       type: Number,
+      default: 15, 
+    },
+    bookedLeaves: {
+      type: Number,
       default: 0,
-    }
+    },
+    leaveHistory: [{
+      leaveId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "LeaveRequest"
+      },
+      leaveType: String,
+      startDate: Date,
+      endDate: Date,
+      status: String,
+      daysTaken: Number
+    }],
   },
+
   {
     timestamps: true,
   }

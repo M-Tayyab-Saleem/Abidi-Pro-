@@ -46,40 +46,63 @@ exports.deleteTimeLog = catchAsync(async (req, res) => {
 
 
 
+// Helper function to get start of day in UTC
+const getStartOfDayUTC = (date = new Date()) => {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+};
+
 // 1. Check-in
 exports.checkIn = catchAsync(async (req, res) => {
   const { userId } = req.body;
-  const today = new Date().setHours(0, 0, 0, 0);
+  const todayStart = getStartOfDayUTC();
+  const todayEnd = new Date(todayStart);
+  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
 
-  let existingLog = await TimeTracker.findOne({ user: userId, date: today });
+  // Find existing log for today
+  const existingLog = await TimeTracker.findOne({
+    user: userId,
+    date: { $gte: todayStart, $lt: todayEnd }
+  });
 
-  if (existingLog && existingLog.checkInTime) {
-    throw new BadRequestError("Already checked in today.");
-  }
-
-  if (!existingLog) {
-    existingLog = new TimeTracker({
-      user: userId,
-      date: today,
-      checkInTime: new Date()
-    });
-  } else {
+  if (existingLog) {
+    if (existingLog.checkInTime) {
+      throw new BadRequestError("Already checked in today.");
+    }
     existingLog.checkInTime = new Date();
+    const saved = await existingLog.save();
+    return res.status(200).json({ message: "Checked in successfully", log: saved });
   }
 
-  const saved = await existingLog.save();
-  res.status(200).json({ message: "Checked in successfully", log: saved });
+  // Create new log
+  const newLog = await TimeTracker.create({
+    user: userId,
+    date: todayStart,
+    checkInTime: new Date()
+  });
+
+  res.status(200).json({ message: "Checked in successfully", log: newLog });
 });
 
 // 2. Check-out
 exports.checkOut = catchAsync(async (req, res) => {
   const { userId } = req.body;
-  const today = new Date().setHours(0, 0, 0, 0);
+  const todayStart = getStartOfDayUTC();
+  const todayEnd = new Date(todayStart);
+  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
 
-  const log = await TimeTracker.findOne({ user: userId, date: today });
-  console.log(log,"hello")
+  // Find today's log
+  const log = await TimeTracker.findOne({
+    user: userId,
+    date: { $gte: todayStart, $lt: todayEnd }
+  });
 
-  if (!log || !log.checkInTime) {
+  if (!log) {
+    throw new BadRequestError("No check-in record found for today.");
+  }
+
+  if (!log.checkInTime) {
     throw new BadRequestError("Cannot check out before checking in.");
   }
 
@@ -88,21 +111,26 @@ exports.checkOut = catchAsync(async (req, res) => {
   }
 
   log.checkOutTime = new Date();
-
-  // Calculate total hours
-  const totalMs = new Date(log.checkOutTime) - new Date(log.checkInTime);
-  log.totalHours = Math.round((totalMs / (1000 * 60 * 60)) * 100) / 100;
+  
+  // Calculate total hours worked
+  const totalMs = log.checkOutTime - log.checkInTime;
+  log.totalHours = parseFloat((totalMs / (1000 * 60 * 60)).toFixed(2));
 
   await log.save();
   res.status(200).json({ message: "Checked out successfully", log });
 });
 
-// 3. Get Today’s Log for User
+// 3. Get Today's Log for User
 exports.getDailyLog = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  const today = new Date().setHours(0, 0, 0, 0);
+  const todayStart = getStartOfDayUTC();
+  const todayEnd = new Date(todayStart);
+  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
 
-  const log = await TimeTracker.findOne({ user: userId, date: today });
+  const log = await TimeTracker.findOne({
+    user: userId,
+    date: { $gte: todayStart, $lt: todayEnd }
+  });
 
   if (!log) {
     return res.status(200).json({ message: "No log found for today." });

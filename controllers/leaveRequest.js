@@ -6,8 +6,19 @@ const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 exports.createLeaveRequest = catchAsync(async (req, res) => {
   const { leaveType, startDate, endDate, reason } = req.body;
   const user = req.user;
+
   if (!leaveType || !startDate || !endDate) {
     throw new BadRequestError("Missing required fields");
+  }
+
+  // Calculate days difference
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Check if user has enough leaves
+  if (user.avalaibleLeaves < daysDiff && leaveType !== "Unpaid") {
+    throw new BadRequestError("Not enough available leaves");
   }
 
   const leaveRequest = new LeaveRequest({
@@ -21,6 +32,25 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
   });
 
   const savedLeaveRequest = await leaveRequest.save();
+
+  // Update user's leave data
+  await User.findByIdAndUpdate(user._id, {
+    $inc: {
+      avalaibleLeaves: leaveType === "Unpaid" ? 0 : -daysDiff,
+      bookedLeaves: daysDiff
+    },
+    $push: {
+      leaveHistory: {
+        leaveId: savedLeaveRequest._id,
+        leaveType,
+        startDate: start,
+        endDate: end,
+        status: 'Pending',
+        daysTaken: daysDiff
+      }
+    }
+  });
+
   res.status(201).json({ success: true, data: savedLeaveRequest });
 });
 
@@ -76,10 +106,6 @@ exports.updateLeaveStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
 
-  // if (req.user?.role !== "admin") {
-  //   throw new UnauthorizedError("Only admins can update leave status");
-  // }
-
   const validStatuses = ["Pending", "Approved", "Rejected"];
   if (!status || !validStatuses.includes(status)) {
     throw new BadRequestError("Invalid or missing status");
@@ -88,6 +114,37 @@ exports.updateLeaveStatus = catchAsync(async (req, res) => {
   const leaveRequest = await LeaveRequest.findById(id);
   if (!leaveRequest) {
     throw new NotFoundError("Leave request not found");
+  }
+
+  // Calculate days difference
+  const start = new Date(leaveRequest.startDate);
+  const end = new Date(leaveRequest.endDate);
+  const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+  // If status changed from Approved to Rejected, return leaves
+  if (leaveRequest.status === "Approved" && status === "Rejected") {
+    await User.findByIdAndUpdate(leaveRequest.employee, {
+      $inc: {
+        avalaibleLeaves: leaveRequest.leaveType === "Unpaid" ? 0 : daysDiff,
+        bookedLeaves: -daysDiff
+      },
+      $set: {
+        "leaveHistory.$[elem].status": status
+      }
+    }, {
+      arrayFilters: [{ "elem.leaveId": leaveRequest._id }]
+    });
+  }
+
+  // If status changed to Approved, deduct leaves (if not already approved)
+  if (status === "Approved" && leaveRequest.status !== "Approved") {
+    await User.findByIdAndUpdate(leaveRequest.employee, {
+      $set: {
+        "leaveHistory.$[elem].status": status
+      }
+    }, {
+      arrayFilters: [{ "elem.leaveId": leaveRequest._id }]
+    });
   }
 
   leaveRequest.status = status;
