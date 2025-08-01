@@ -6,7 +6,7 @@ const aclSchema = require('../models/aclSchema');
 
 exports.register = async (req, res) => {
   const { name, folderId, cloudinaryId, url, size, mimeType } = req.body;
-  console.log("registering file",name)
+  console.log("registering file",req.body)
   // TODO: check ACL on folderId
   const file = await File.create({
     name, folderId,
@@ -22,7 +22,7 @@ exports.downloadUrl = async (req, res) => {
   // TODO: check ACL on file
   const downloadUrl = cloudinary.url(file.cloudinaryId, {
     type:      'authenticated',
-    expires:   Math.floor(Date.now()/1000) + 300
+    // expires:   Math.floor(Date.now()/1000) + 300
   });
   res.json({ downloadUrl });
 };

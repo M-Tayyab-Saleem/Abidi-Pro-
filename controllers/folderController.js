@@ -7,11 +7,13 @@ exports.getContents = async (req, res, next) => {
     const { id } = req.params;
 
     const userId = req.user?.id || req.query.userId;
-   
+    
+          //  console.log("getting folder and files ",id)
+
 
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
-      return res.status(400).json({ error: 'Missing or invalid userId' });
+      return res.status(400).json({ error: 'Access Denied' });
     }
     const parentId =
       id === 'root'
@@ -55,7 +57,7 @@ exports.getContents = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const { name, parentId, ownerId } = req.body;
-
+console.log(req.body)
     if (!name || !ownerId) {
       return res.status(400).json({ error: 'Folder name and ownerId are required' });
     }

@@ -20,6 +20,6 @@ exports.signUpload = (req, res) => {
   });
   }
   catch(err){
-  console.log(err)
+  console.log(err,"error uploading file")
 }
 };
