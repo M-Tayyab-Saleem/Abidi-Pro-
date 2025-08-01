@@ -1,6 +1,7 @@
 const LeaveRequest = require("../models/leaveRequestSchema");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
+const User = require("../models/userSchema");
 
 // Create Leave Request
 exports.createLeaveRequest = catchAsync(async (req, res) => {

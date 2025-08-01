@@ -55,7 +55,8 @@ const getStartOfDayUTC = (date = new Date()) => {
 
 // 1. Check-in
 exports.checkIn = catchAsync(async (req, res) => {
-  const { userId } = req.body;
+  // const { userId } = req.body;
+  const userId = req.user.id;
   const todayStart = getStartOfDayUTC();
   const todayEnd = new Date(todayStart);
   todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
@@ -87,7 +88,8 @@ exports.checkIn = catchAsync(async (req, res) => {
 
 // 2. Check-out
 exports.checkOut = catchAsync(async (req, res) => {
-  const { userId } = req.body;
+  // const { userId } = req.body;
+  const userId = req.user.id;
   const todayStart = getStartOfDayUTC();
   const todayEnd = new Date(todayStart);
   todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);

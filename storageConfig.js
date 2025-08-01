@@ -7,35 +7,47 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Main storage for general files
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'rideapp',
-        allowedFormats: ["png", "jpeg", "jpg"],
+        folder: 'abidiPro',
+        allowedFormats: ["png", "jpeg", "jpg", "pdf"],
     },
 });
 
-
-const driverDocsStorage = new CloudinaryStorage({
+// User profile photos storage
+const userProfileStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'rideapp/driver_docs',
+        folder: 'abidiPro/users/profile_photos',
         allowedFormats: ["png", "jpeg", "jpg"],
+        transformation: [{ width: 500, height: 500, crop: "limit" }]
     },
 });
 
-const vehicleDocsStorage = new CloudinaryStorage({
+// TimeLogs attachments storage
+const timeLogsStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'rideapp/vehicle_docs',
-        allowedFormats: ["png", "jpeg", "jpg"],
+        folder: 'abidiPro/timeLogs/attachments',
+        allowedFormats: ["png", "jpeg", "jpg", "pdf"],
+    },
+});
+
+// Timesheets attachments storage
+const timesheetsStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'abidiPro/timesheets/attachments',
+        allowedFormats: ["png", "jpeg", "jpg", "pdf"],
     },
 });
 
 module.exports = {
     cloudinary, 
     storage,
-    driverDocsStorage,
-    vehicleDocsStorage
-}
-   
+    userProfileStorage,
+    timeLogsStorage,
+    timesheetsStorage
+};

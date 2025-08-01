@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const timeTrackerController = require("../../controllers/timeTrackerController");
 const catchAsync = require("../../utils/catchAsync");
+const { isLoggedIn } = require("../../middlewares/authMiddleware");
+
+router.use(isLoggedIn);
 
 router
   .route("/")
