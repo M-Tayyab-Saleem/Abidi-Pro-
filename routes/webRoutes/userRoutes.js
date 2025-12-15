@@ -14,6 +14,13 @@ router
 
 router.get("/admins", userController.getAdminUsers);
 
+router.get('/birthdays/upcoming', userController.getUpcomingBirthdays);
+
+router
+  .route("/search")
+  .get(userController.getUserById);
+
+
 router
   .route("/:id")
   .get(userController.getUserById)
@@ -21,7 +28,26 @@ router
   .delete(userController.deleteUser);
 
 router
-  .route("/search")
-  .get(userController.getUserById);
+  .route('/:id/dashboard-cards')
+  .get(userController.getDashboardCards);
+
+router
+  .route('/:id/dashboard-cards/add')
+  .post(userController.addDashboardCard);
+
+router
+  .route('/:id/dashboard-cards/:cardId')
+  .delete(userController.removeDashboardCard);
+
+  router
+  .route('/:id/leaves')
+  .get(userController.getUserLeaves)
+  .put(userController.updateUserLeaves);
+
+  router.post(
+  '/:id/upload-avatar',
+  upload.single('avatar'),
+  userController.uploadAvatar
+);
 
 module.exports = router;

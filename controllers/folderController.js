@@ -1,102 +1,208 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); // Added missing import
 const Folder = require('../models/folder');
 const File = require('../models/file');
+const { cloudinary } = require('../storageConfig');
+const { uploadFolderThumbnail } = require('../middlewares/uploadMiddleware');
+const catchAsync = require('../utils/catchAsync');
+const {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} = require("../utils/ExpressError");
 
-exports.getContents = async (req, res, next) => {
-  try {
-    const { id } = req.params;
+// Helper function to ensure root folder exists
+const ensureRootFolder = async (userId) => {
+  let rootFolder = await Folder.findOne({
+    name: 'Root',
+    ownerId: userId,
+    parentId: null,
+    isDeleted: false
+  });
 
-    const userId = req.user?.id || req.query.userId;
-    
-          //  console.log("getting folder and files ",id)
-
-
-
-    if (!userId || !mongoose.isValidObjectId(userId)) {
-      return res.status(400).json({ error: 'Access Denied' });
-    }
-    const parentId =
-      id === 'root'
-        ? null
-        : mongoose.isValidObjectId(id)
-        ? new mongoose.Types.ObjectId(id)
-        : null;
-
-    if (id !== 'root' && parentId === null) {
-      return res.status(400).json({ error: 'Invalid folder ID' });
-    }
-
-   const [folders, files] = await Promise.all([
-  Folder.find({
-    parentId,
-    isDeleted: false,
-    $or: [
-      { ownerId: userId },
-      { acl: { $elemMatch: { userId: userId } } }
-    ]
-  }).populate('ownerId').populate('acl.userId'),
-
-  File.find({
-    folderId: parentId,
-    isDeleted: false,
-    $or: [
-      { ownerId: userId },
-      { acl: { $elemMatch: { userId: userId } } }
-    ]
-  }).populate('ownerId').populate('acl.userId')
-]);
-
-    res.json({ folders, files });
-  } catch (err) {
-    console.error('Error in getContents:', err);
-    next(err);
-  }
-};
-
-// POST: Create new folder
-exports.create = async (req, res, next) => {
-  try {
-    const { name, parentId, ownerId } = req.body;
-console.log(req.body)
-    if (!name || !ownerId) {
-      return res.status(400).json({ error: 'Folder name and ownerId are required' });
-    }
-
-    const folder = await Folder.create({
-      name,
-      parentId: parentId || null,
-      ownerId,
-      acl: [{ userId: req.user?.id || ownerId, role: 'owner' }]
+  if (!rootFolder) {
+    rootFolder = await Folder.create({
+      name: 'Root',
+      ownerId: userId,
+      parentId: null,
+      acl: [{ 
+        userId: userId, 
+        role: 'owner', 
+        accessType: 'user' 
+      }]
     });
-
-    res.status(201).json(folder);
-  } catch (err) {
-    console.error('Error creating folder:', err);
-    next(err);
   }
+
+  return rootFolder;
 };
 
-// controllers/folder.controller.js
+// Get folder contents
+exports.getContents = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
 
-exports.softDeleteFolder = async (req, res) => {
-  const { folderId } = req.params;
-console.log("deleting folder", folderId)
+  if (!userId) {
+    return next(new UnauthorizedError('Authentication required'));
+  }
 
+  let parentId;
+  
+  if (id === 'root') {
+    // Ensure root folder exists and get its ID
+    const rootFolder = await ensureRootFolder(userId);
+    parentId = rootFolder._id;
+  } else if (mongoose.isValidObjectId(id)) {
+    parentId = id;
+  } else {
+    return next(new BadRequestError('Invalid folder ID'));
+  }
 
-  try {
-    const folder = await Folder.findByIdAndUpdate(
-      folderId,
-      { isDeleted: true },
-      { new: true }
-    );
+  const [folders, files] = await Promise.all([
+    Folder.find({
+      parentId,
+      isDeleted: false,
+      $or: [
+        { ownerId: userId },
+        { 'acl.userId': userId }
+      ]
+    })
+    .populate('ownerId', 'name email')
+    .populate('acl.userId', 'name email')
+    .sort({ name: 1 }),
+    
+    File.find({
+      folderId: parentId,
+      isDeleted: false,
+      $or: [
+        { ownerId: userId },
+        { 'acl.userId': userId },
+        { isPublic: true },
+        { 'acl.email': req.user.email },
+        { sharedWithRoles: { $in: req.user.roles || [] } }
+      ]
+    })
+    .populate('ownerId', 'name email')
+    .populate('acl.userId', 'name email')
+    .sort({ name: 1 })
+  ]);
 
-    if (!folder) {
-      return res.status(404).json({ error: 'Folder not found' });
+  res.status(200).json({
+    status: 'success',
+    data: {
+      folders,
+      files
     }
+  });
+});
 
-    res.json({ message: 'Folder deleted (soft)', folder });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+// Create folder with optional thumbnail
+exports.create = catchAsync(async (req, res, next) => {
+  const { name, parentId, description } = req.body;
+  
+  if (!name) {
+    return next(new BadRequestError('Folder name is required'));
   }
-};
+
+  let finalParentId = null;
+
+  // Handle parentId logic
+  if (parentId && parentId !== 'root') {
+    if (mongoose.isValidObjectId(parentId)) {
+      finalParentId = parentId;
+    } else {
+      return next(new BadRequestError('Invalid parent folder ID'));
+    }
+  } else {
+    // If parentId is null, 'root', or empty, set as child of root folder
+    const rootFolder = await ensureRootFolder(req.user.id);
+    finalParentId = rootFolder._id;
+  }
+
+  const folderData = {
+    name,
+    parentId: finalParentId,
+    ownerId: req.user.id,
+    description: description || '',
+    acl: [{ 
+      userId: req.user.id, 
+      role: 'owner', 
+      accessType: 'user' 
+    }]
+  };
+
+  if (req.file) {
+    folderData.thumbnail = {
+      cloudinaryId: req.file.public_id,
+      url: req.file.path
+    };
+  }
+
+  const folder = await Folder.create(folderData);
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      folder
+    }
+  });
+});
+
+// Soft delete folder
+exports.softDeleteFolder = catchAsync(async (req, res, next) => {
+  const { folderId } = req.params;
+
+  const folder = await Folder.findById(folderId);
+  if (!folder) {
+    return next(new NotFoundError('Folder not found'));
+  }
+
+  // Only owner or admin can delete
+  if (!folder.ownerId.equals(req.user.id)) {
+    return next(new UnauthorizedError('Permission denied'));
+  }
+
+  // Prevent deletion of root folder
+  if (folder.name === 'Root' && folder.parentId === null) {
+    return next(new BadRequestError('Cannot delete root folder'));
+  }
+
+  const updatedFolder = await Folder.findByIdAndUpdate(
+    folderId,
+    { 
+      isDeleted: true,
+      deletedAt: Date.now() 
+    },
+    { new: true }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      folder: updatedFolder
+    }
+  });
+});
+
+// Get all folders for current user
+exports.getAllFolders = catchAsync(async (req, res, next) => {
+  // Ensure root folder exists for user
+  await ensureRootFolder(req.user.id);
+  
+  const folders = await Folder.find({
+    isDeleted: false,
+    $or: [
+      { ownerId: req.user.id },
+      { 'acl.userId': req.user.id }
+    ]
+  })
+  .populate('ownerId', 'name email')
+  .populate('parentId', 'name')
+  .sort({ name: 1 });
+
+  res.status(200).json({
+    status: 'success',
+    results: folders.length,
+    data: {
+      folders
+    }
+  });
+});

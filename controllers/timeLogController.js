@@ -39,7 +39,17 @@ exports.getEmployeeTimeLogs = catchAsync(async (req, res) => {
 
   const query = { employee };
   if (date) {
-    query.date = new Date(date);
+    
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+    
+    query.date = {
+      $gte: startDate,
+      $lte: endDate
+    };
   }
 
   const timeLogs = await TimeLog.find(query);

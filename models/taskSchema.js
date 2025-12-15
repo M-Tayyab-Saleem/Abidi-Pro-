@@ -1,68 +1,91 @@
+// taskSchema.js
 const mongoose = require("mongoose");
 
-const taskSchema = new mongoose.Schema({
-  taskTitle: {
-    type: String,
-    required: true
+const taskSchema = new mongoose.Schema(
+  {
+    taskID: {
+      type: String,
+      unique: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      required: true,
+    },
+    team: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    priority: {
+      type: String,
+      enum: ["Low", "Medium", "High"],
+      default: "Medium",
+    },
+    dueDate: {
+      type: Date,
+    },
+    duration: {
+      type: Number, 
+    },
+    completionPercent: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
+    workedHours: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["Todo", "In Progress", "In Review", "Done"],
+      default: "Todo",
+    },
+    comments: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        text: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    attachments: [
+      {
+        public_id: String,
+        url: String,
+        originalname: String,
+        format: String,
+        size: Number,
+      },
+    ],
   },
-  projectId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',   
-    required: true
-  },
-  comments:[{
-    commenter:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',   
-    required: true
-  },
-  comment:{
-    type:String,
-    required:true
-  },
-  createdAt:{
-    type:Date,
-    required:true
+  {
+    timestamps: true,
   }
-}
-],
-  taskId: {
-    type: String,
-    required: true
-  },
-  taskDescription: {
-    type: String
-  },
-  startDate: {
-    type: Date,
-    required: true
-  },
-  dueDate: {
-    type: Date
-  },
-  assignedTo:[{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',   
-    required: true
-  }],
-  priority: {
-    type: String,
-    enum: ['Low', 'Medium', 'High', 'Critical'],
-    default: 'Medium'
-  },
-  status: {
-    type: String,
-    enum: ['Pending', 'In Progress', 'Completed', 'Blocked'],
-    default: 'Pending'
-  },
-  owner:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',   
-    required: true
+);
+
+taskSchema.pre("save", async function (next) {
+  if (!this.taskID) {
+    const count = await mongoose.models.Task.countDocuments();
+    this.taskID = `TSK-${String(count + 1).padStart(3, "0")}`;
   }
-  
-}, {
-  timestamps: true
+  next();
 });
 
-module.exports = mongoose.model("Task", taskSchema);
+const Task = mongoose.models.Task || mongoose.model("Task", taskSchema);
+module.exports = Task;

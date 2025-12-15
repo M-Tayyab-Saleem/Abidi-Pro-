@@ -1,13 +1,16 @@
 const LeaveRequest = require("../models/leaveRequestSchema");
+const User = require("../models/userSchema");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
-const User = require("../models/userSchema");
 
 // Create Leave Request
 exports.createLeaveRequest = catchAsync(async (req, res) => {
   const { leaveType, startDate, endDate, reason } = req.body;
-  const user = req.user;
-
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  
   if (!leaveType || !startDate || !endDate) {
     throw new BadRequestError("Missing required fields");
   }
@@ -17,11 +20,13 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
   const end = new Date(endDate);
   const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-  // Check if user has enough leaves
-  if (user.avalaibleLeaves < daysDiff && leaveType !== "Unpaid") {
-    throw new BadRequestError("Not enough available leaves");
+  // Check if user has enough leaves for the specific type
+if (leaveType !== "Unpaid") {
+  const userLeaveBalance = user.leaves[leaveType.toLowerCase()] || 0;
+  if (userLeaveBalance < daysDiff) {
+    throw new BadRequestError(`Not enough ${leaveType} leaves available`);
   }
-
+}
   const leaveRequest = new LeaveRequest({
     employee: user._id,
     employeeName: user.name,
@@ -35,11 +40,7 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
   const savedLeaveRequest = await leaveRequest.save();
 
   // Update user's leave data
-  await User.findByIdAndUpdate(user._id, {
-    $inc: {
-      avalaibleLeaves: leaveType === "Unpaid" ? 0 : -daysDiff,
-      bookedLeaves: daysDiff
-    },
+  const updateObj = {
     $push: {
       leaveHistory: {
         leaveId: savedLeaveRequest._id,
@@ -50,10 +51,19 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
         daysTaken: daysDiff
       }
     }
-  });
+  };
+
+  // Only deduct leaves if not unpaid
+  if (leaveType !== "Unpaid") {
+    updateObj.$inc = {};
+    updateObj.$inc[`leaves.${leaveType.toLowerCase()}`] = -daysDiff;
+  }
+
+  await User.findByIdAndUpdate(user._id, updateObj);
 
   res.status(201).json({ success: true, data: savedLeaveRequest });
 });
+
 
 // Get all Leave Requests
 exports.getLeaveRequests = catchAsync(async (req, res) => {
@@ -106,7 +116,7 @@ exports.deleteLeaveRequest = catchAsync(async (req, res) => {
 exports.updateLeaveStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
-
+console.log(id)
   const validStatuses = ["Pending", "Approved", "Rejected"];
   if (!status || !validStatuses.includes(status)) {
     throw new BadRequestError("Invalid or missing status");
@@ -122,31 +132,21 @@ exports.updateLeaveStatus = catchAsync(async (req, res) => {
   const end = new Date(leaveRequest.endDate);
   const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
+  const updateObj = {
+    $set: {
+      "leaveHistory.$[elem].status": status
+    }
+  };
+
   // If status changed from Approved to Rejected, return leaves
-  if (leaveRequest.status === "Approved" && status === "Rejected") {
-    await User.findByIdAndUpdate(leaveRequest.employee, {
-      $inc: {
-        avalaibleLeaves: leaveRequest.leaveType === "Unpaid" ? 0 : daysDiff,
-        bookedLeaves: -daysDiff
-      },
-      $set: {
-        "leaveHistory.$[elem].status": status
-      }
-    }, {
-      arrayFilters: [{ "elem.leaveId": leaveRequest._id }]
-    });
+  if (leaveRequest.status === "Approved" && status === "Rejected" && leaveRequest.leaveType !== "Unpaid") {
+    updateObj.$inc = {};
+    updateObj.$inc[`leaves.${leaveRequest.leaveType.toLowerCase()}`] = daysDiff;
   }
 
-  // If status changed to Approved, deduct leaves (if not already approved)
-  if (status === "Approved" && leaveRequest.status !== "Approved") {
-    await User.findByIdAndUpdate(leaveRequest.employee, {
-      $set: {
-        "leaveHistory.$[elem].status": status
-      }
-    }, {
-      arrayFilters: [{ "elem.leaveId": leaveRequest._id }]
-    });
-  }
+  await User.findByIdAndUpdate(leaveRequest.employee, updateObj, {
+    arrayFilters: [{ "elem.leaveId": leaveRequest._id }]
+  });
 
   leaveRequest.status = status;
   await leaveRequest.save();

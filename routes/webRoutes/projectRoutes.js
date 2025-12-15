@@ -1,20 +1,23 @@
 // projectRoutes.js
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const { projectsStorage } = require("../../storageConfig");
+const upload = multer({ storage: projectsStorage });
 const projectController = require("../../controllers/projectController");
-const catchAsync = require("../../utils/catchAsync");
+const { isLoggedIn } = require("../../middlewares/authMiddleware");
 
 router
   .route("/")
-  .post(projectController.createProject)
-  .get(projectController.getAllProjects);
+  .post(isLoggedIn, upload.array("attachments", 5), projectController.createProject)
+  .get(isLoggedIn, projectController.getAllProjects);
 
-router.get('/dashboard', projectController.getProjectDashboard);
+router.get("/user", isLoggedIn, projectController.getUserProjects);
 
 router
   .route("/:id")
-  .get(projectController.getProjectById)
-  .put(projectController.updateProject)
-  .delete(projectController.deleteProject);
+  .get(isLoggedIn, projectController.getProjectById)
+  .put(isLoggedIn, upload.array("attachments", 5), projectController.updateProject)
+  .delete(isLoggedIn, projectController.deleteProject);
 
 module.exports = router;

@@ -14,9 +14,13 @@ router
 
 router.get("/all", isLoggedIn, timesheetController.getAllTimesheets);
 
+router.get("/admin/all", isLoggedIn, timesheetController.getAllTimesheets);
+
 router
     .route("/:id")
     .get(isLoggedIn, timesheetController.getTimesheetById)
     .put(isLoggedIn, upload.array("attachments", 5), timesheetController.updateTimesheetStatus);
+
+router.put("/:id/status", isLoggedIn, timesheetController.updateTimesheetStatus);
 
 module.exports = router;

@@ -8,8 +8,8 @@ router.use(isLoggedIn);
 
 router
   .route("/")
-  .post(catchAsync(timeTrackerController.createTimeLog))
-  .get(catchAsync(timeTrackerController.getAllTimeLogs));
+  .post(timeTrackerController.createTimeLog)
+  .get(timeTrackerController.getAllTimeLogs);
   
 // Check-in route
 router.post('/check-in', timeTrackerController.checkIn);
@@ -20,10 +20,20 @@ router.post('/check-out', timeTrackerController.checkOut);
 // Get today's log for a user
 router.get('/daily-log/:userId', timeTrackerController.getDailyLog);
 
+router.get('/attendance/:month/:year', timeTrackerController.getMonthlyAttendance);
+
+router.get('/open-sessions', timeTrackerController.checkOpenSessions);
+
+// Manual trigger for auto-checkout (admin/testing purposes)
+router.post('/manual-auto-checkout', timeTrackerController.manualAutoCheckout);
+
+
 router
   .route("/:id")
-  .get(catchAsync(timeTrackerController.getTimeLogById))
-  .put(catchAsync(timeTrackerController.updateTimeLog))
-  .delete(catchAsync(timeTrackerController.deleteTimeLog));
+  .get(timeTrackerController.getTimeLogById)
+  .put(timeTrackerController.updateTimeLog)
+  .delete(timeTrackerController.deleteTimeLog);
+
+
 
 module.exports = router;

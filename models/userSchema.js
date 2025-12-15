@@ -123,11 +123,15 @@ const userSchema = new mongoose.Schema(
     },
     avalaibleLeaves: {
       type: Number,
-      default: 15, 
+      default: 15,
     },
     bookedLeaves: {
       type: Number,
       default: 0,
+    },
+    avatar: {
+      type: String,
+      default: ""
     },
     leaveHistory: [{
       leaveId: {
@@ -140,6 +144,56 @@ const userSchema = new mongoose.Schema(
       status: String,
       daysTaken: Number
     }],
+leaves: {
+  paid: {
+    type: Number,
+    default: 3,
+  },
+  sick: {
+    type: Number,
+    default: 4,
+  },
+  majlis: {
+    type: Number,
+    default: 5,
+  },
+  casual: {
+    type: Number,
+    default: 0,
+  },
+  earned: {
+    type: Number,
+    default: 0,
+  },
+  maternity: {
+    type: Number,
+    default: 0,
+  },
+  paternity: {
+    type: Number,
+    default: 0,
+  },
+  compensatory: {
+    type: Number,
+    default: 0,
+  },
+  unpaid: {
+    type: Number,
+    default: 0,
+  }
+},
+    dashboardCards: [{
+      type: {
+        type: String,
+        required: true,
+        enum: ["feeds", "attendance", "holidays", "todo", "notes", "recent activities",
+          "birthdays", "leavelog", "upcomingDeadlines", "timeoffBalance", "tasksAssignedToMe"]
+      },
+      id: {
+        type: String,
+        required: true
+      }
+    }]
   },
 
   {

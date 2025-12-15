@@ -54,13 +54,13 @@ exports.login = async (req, res) => {
     name: user.name,
     id: user._id,
     role: user.role,
+    avatar: user?.avatar
   });
 };
 
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   const user = await User.findOne({ email });
-  console.log(user.otp)
   if (!user || !user.otp || user.otpExpires < Date.now())
     throw new BadRequestError("Invalid or expired OTP");
   if (String(user.otp) !== String(otp)) throw new BadRequestError("Invalid OTP");

@@ -7,12 +7,14 @@ router
   .post(holidayController.createHoliday)
   .get(holidayController.getAllHolidays);
 
+router.get("/year/:year", holidayController.getHolidaysByYear);
+
+
 router
   .route("/:id")
   .get(holidayController.getHolidayById)
   .put(holidayController.updateHoliday)
   .delete(holidayController.deleteHoliday);
 
-router.get("/year/:year", holidayController.getHolidaysByYear);
 
 module.exports = router;

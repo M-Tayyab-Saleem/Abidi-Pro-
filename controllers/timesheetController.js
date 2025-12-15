@@ -4,17 +4,31 @@ const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
 // Create Timesheet
+// Create Timesheet
 exports.createTimesheet = catchAsync(async (req, res) => {
-  const { description, timeLogs, attachments } = req.body;
-  const employee = req.user._id;
+  const {name, description, timeLogs } = req.body;
+  const employee = req.user.id;
+  const attachments = req.files;
   const employeeName = req.user.name;
-  const date = new Date(); // Current date
+  const today = new Date();
+  
+  // Set time to beginning of day for date comparison
+  today.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(today);
+  endOfDay.setHours(23, 59, 59, 999);
 
-  // Check if timesheet already exists for this employee and date
-  const existingTimesheet = await Timesheet.findOne({ employee, date });
-  if (existingTimesheet) {
-    throw new BadRequestError("Timesheet already exists for today");
-  }
+  // Check if timesheet already exists for this employee today
+  const existingTimesheet = await Timesheet.findOne({
+    employee,
+    date: {
+      $gte: today,
+      $lte: endOfDay
+    }
+  });
+
+  // if (existingTimesheet) {
+  //   throw new BadRequestError("You can only create one timesheet per day");
+  // }
 
   // Verify all time logs belong to the employee and aren't already in a timesheet
   const logs = await TimeLog.find({
@@ -30,16 +44,24 @@ exports.createTimesheet = catchAsync(async (req, res) => {
   // Calculate total hours
   const submittedHours = logs.reduce((total, log) => total + log.hours, 0);
 
-  // Create timesheet
+    const attachmentData = attachments?.map(file => ({
+    public_id: file.public_id,
+    url: file.path,
+    originalname: file.originalname,
+    format: file.format,
+    size: file.size
+  }));
+
+  // Create timesheet with current date
   const timesheet = new Timesheet({
-    name: `Timesheet ${date.toISOString().split('T')[0]}`,
+    name,
     description,
     employee,
     employeeName,
-    date,
+    date: new Date(), // Store exact creation time
     submittedHours,
     timeLogs,
-    attachments,
+    attachments: attachmentData || [],
   });
 
   // Save timesheet and update time logs
@@ -56,8 +78,22 @@ exports.createTimesheet = catchAsync(async (req, res) => {
 
 // Get Timesheets for Employee
 exports.getEmployeeTimesheets = catchAsync(async (req, res) => {
-  const employee = req.user._id;
-  const timesheets = await Timesheet.find({ employee }).populate("timeLogs");
+  const employee = req.user.id;
+  const { month, year } = req.query;
+  
+  let query = { employee };
+  
+  if (month && year) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+    
+    query.date = {
+      $gte: startDate,
+      $lte: endDate
+    };
+  }
+
+  const timesheets = await Timesheet.find(query).populate("timeLogs");
   res.status(200).json(timesheets);
 });
 
@@ -92,4 +128,43 @@ exports.updateTimesheetStatus = catchAsync(async (req, res) => {
 exports.getAllTimesheets = catchAsync(async (req, res) => {
   const timesheets = await Timesheet.find().populate("timeLogs");
   res.status(200).json(timesheets);
+});
+
+exports.getAllTimesheets = catchAsync(async (req, res) => {
+  const { month, year } = req.query;
+  
+  let query = {};
+  
+  if (month && year) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+    
+    query.date = {
+      $gte: startDate,
+      $lte: endDate
+    };
+  }
+
+  const timesheets = await Timesheet.find(query)
+    .populate("timeLogs")
+    .sort({ date: -1 });
+    
+  res.status(200).json(timesheets);
+});
+
+// Update Timesheet Status
+exports.updateTimesheetStatus = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { status, approvedHours } = req.body;
+
+  const timesheet = await Timesheet.findById(id);
+  if (!timesheet) throw new NotFoundError("Timesheet");
+
+  timesheet.status = status;
+  if (approvedHours !== undefined) {
+    timesheet.approvedHours = approvedHours;
+  }
+
+  const updatedTimesheet = await timesheet.save();
+  res.status(200).json(updatedTimesheet);
 });

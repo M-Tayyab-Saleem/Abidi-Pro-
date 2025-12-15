@@ -22,16 +22,17 @@ const timeTrackerSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Approved', 'Rejected'],
-    default: 'Pending'
+    enum: ['Present', 'Absent', 'Half Day', 'Leave', 'Holiday'],
+    default: 'Present'
   },
-  submittedHours: {
-    type: Number
+  notes: {
+    type: String
   },
-  absents: {
-    type: Number,
-    default: 0
+  autoCheckedOut: {
+    type: Boolean,
+    default: false
   }
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("TimeTracker", timeTrackerSchema);

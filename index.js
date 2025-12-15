@@ -6,6 +6,7 @@ require("./conn/conn");
 const cookieParser = require("cookie-parser");
 const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
+const CronJobs = require('./cronjobs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,4 +37,10 @@ app.use(globalErrorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  new CronJobs();
+});
+
+process.on('SIGINT', async () => {
+  console.log('Shutting down cron jobs...');
+  process.exit(0);
 });
