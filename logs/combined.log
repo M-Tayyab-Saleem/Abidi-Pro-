@@ -4,7 +4,6 @@
 {"level":"info","message":"Signin request received for email: mmehmood@abidisolutions.com","timestamp":"2025-03-24T16:35:21.075Z"}
 {"level":"info","message":"User mmehmood@abidisolutions.com successfully logged in.","timestamp":"2025-03-24T16:35:21.309Z"}
 {"level":"info","message":"OTP successfully generated and sent to mmehmood@abidisolutions.com.","timestamp":"2025-03-24T16:35:21.390Z"}
-{"level":"info","message":"Signin request received for email: mmehmood@abidisolutions.com","timestamp":"2025-03-24T16:39:26.005Z"}
 {"level":"info","message":"User mmehmood@abidisolutions.com successfully logged in.","timestamp":"2025-03-24T16:39:26.209Z"}
 {"level":"info","message":"OTP successfully generated and sent to mmehmood@abidisolutions.com.","timestamp":"2025-03-24T16:39:26.279Z"}
 {"level":"error","message":"Unknown log level: INFO","timestamp":"2025-03-24T16:39:26.366Z"}

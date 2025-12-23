@@ -24,13 +24,10 @@ class CronJobs {
       const now = new Date();
       const todayStart = new Date(now);
       todayStart.setUTCHours(0, 0, 0, 0);
-      
-      // Find ALL sessions where users checked in but didn't check out from ANY previous day
-      // This includes yesterday and any older open sessions
-      const openSessions = await TimeTracker.find({
+            const openSessions = await TimeTracker.find({
         checkInTime: { $exists: true, $ne: null },
         checkOutTime: { $exists: false },
-        date: { $lt: todayStart } // Any date before today
+        date: { $lt: todayStart } 
       }).populate('user');
 
       console.log(`Found ${openSessions.length} open sessions to auto-checkout`);

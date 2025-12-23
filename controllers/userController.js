@@ -3,13 +3,6 @@ const bcrypt = require("bcryptjs");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
-const checkUser = async (id) => {
-  const user = await User.findById(id);
-  if (!user) throw new NotFoundError("User");
-  return user;
-};
-
-
 // Create User
 exports.createUser = catchAsync(async (req, res) => {
   const {
@@ -55,7 +48,6 @@ exports.createUser = catchAsync(async (req, res) => {
   res.status(201).json(savedUser);
 });
 
-
 // Get All Users
 exports.getAllUsers = catchAsync(async (req, res) => {
   const users = await User.find();
@@ -65,7 +57,9 @@ exports.getAllUsers = catchAsync(async (req, res) => {
 // Get User by ID
 exports.getUserById = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const user = await checkUser(id);
+  const user = await User.findById(id);
+
+  if (!user) throw new NotFoundError("User");
 
   res.status(200).json(user);
 });
@@ -76,7 +70,8 @@ exports.updateUser = catchAsync(async (req, res) => {
   const { id } = req.params;
   const updates = { ...req.body };
 
-  const user = await checkUser(id);
+  const user = await User.findById(id);
+  if (!user) throw new NotFoundError("User");
 
   // Only update allowed fields
   const allowedFields = [
@@ -101,7 +96,8 @@ exports.updateUser = catchAsync(async (req, res) => {
 exports.deleteUser = catchAsync(async (req, res) => {
   const { id } = req.params;
   const user = await User.findByIdAndDelete(id);
-  await checkUser(id); // Ensure user existed before deleting
+
+  if (!user) throw new NotFoundError("User");
 
   res.status(200).json({ message: "User deleted successfully" });
 });
@@ -116,7 +112,9 @@ exports.getAdminUsers = catchAsync(async (req, res) => {
 // Get user's dashboard cards
 exports.getDashboardCards = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const user = await checkUser(id).select('dashboardCards');
+  const user = await User.findById(id).select('dashboardCards');
+  
+  if (!user) throw new NotFoundError("User");
   
   res.status(200).json(user.dashboardCards);
 });

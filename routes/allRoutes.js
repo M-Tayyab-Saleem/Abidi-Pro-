@@ -69,15 +69,11 @@ const timeTrackerController = require("../controllers/timeTrackerController");
 // router.put("/timeTracker/:id", timeTrackerController.updateTimeLog);
 // router.delete("/timeTracker/:id", timeTrackerController.deleteTimeLog);
 
-
-
 //Leave Routes
 // router.post("/createLeave", catchAsync(createLeaveRequest));
 // router.get("/getAllLeaves", catchAsync(getLeaveRequests));
 // router.get("/getLeave/:id", catchAsync(getLeaveRequestById));
 // router.put("/updateLeave/:id", catchAsync(updateLeaveRequest));
 // router.delete("/deleteLeave/:id", catchAsync(deleteLeaveRequest));
-
-
 
 module.exports = router;
