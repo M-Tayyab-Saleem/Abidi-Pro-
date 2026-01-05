@@ -9,7 +9,11 @@ const timeTrackerSchema = new mongoose.Schema({
   date: {
     type: Date,
     required: true,
-    default: () => new Date().setHours(0, 0, 0, 0)
+    default: () => {
+      const d = new Date();
+      d.setUTCHours(0,0,0,0);
+      return d;
+    }
   },
   checkInTime: {
     type: Date
@@ -18,12 +22,13 @@ const timeTrackerSchema = new mongoose.Schema({
     type: Date
   },
   totalHours: {
-    type: Number
+    type: Number,
+    default: 0
   },
   status: {
     type: String,
-    enum: ['Present', 'Absent', 'Half Day', 'Leave', 'Holiday'],
-    default: 'Present'
+    enum: ['Present', 'Absent', 'Half Day', 'Leave', 'Holiday', 'Weekend'],
+    default: 'Absent' 
   },
   notes: {
     type: String
@@ -32,7 +37,6 @@ const timeTrackerSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   }
-
 }, { timestamps: true });
 
 module.exports = mongoose.model("TimeTracker", timeTrackerSchema);

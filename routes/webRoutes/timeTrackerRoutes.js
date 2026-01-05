@@ -1,39 +1,27 @@
 const express = require("express");
 const router = express.Router();
 const timeTrackerController = require("../../controllers/timeTrackerController");
-const catchAsync = require("../../utils/catchAsync");
 const { isLoggedIn } = require("../../middlewares/authMiddleware");
 
 router.use(isLoggedIn);
 
-router
-  .route("/")
-  .post(timeTrackerController.createTimeLog)
-  .get(timeTrackerController.getAllTimeLogs);
-  
-// Check-in route
+// Main Check In/Out
 router.post('/check-in', timeTrackerController.checkIn);
-
-// Check-out route
 router.post('/check-out', timeTrackerController.checkOut);
 
-// Get today's log for a user
+// Data Retrieval
 router.get('/daily-log/:userId', timeTrackerController.getDailyLog);
+router.get('/attendance/:month/:year', timeTrackerController.getMonthlyAttendance); // Assuming this controller exists in your file
+// router.get('/open-sessions', ...); // Optional based on your needs
 
-router.get('/attendance/:month/:year', timeTrackerController.getMonthlyAttendance);
+// CRUD (Admin or specific use cases)
+router.route("/")
+  .post(timeTrackerController.createTimeLog) // Manual create
+  .get(timeTrackerController.getAllTimeLogs); // Admin get all
 
-router.get('/open-sessions', timeTrackerController.checkOpenSessions);
-
-// Manual trigger for auto-checkout (admin/testing purposes)
-router.post('/manual-auto-checkout', timeTrackerController.manualAutoCheckout);
-
-
-router
-  .route("/:id")
+router.route("/:id")
   .get(timeTrackerController.getTimeLogById)
-  .put(timeTrackerController.updateTimeLog)
-  .delete(timeTrackerController.deleteTimeLog);
-
-
+  // .put(timeTrackerController.updateTimeLog) // Be careful exposing update without validation
+  // .delete(timeTrackerController.deleteTimeLog);
 
 module.exports = router;

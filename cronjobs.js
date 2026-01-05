@@ -1,7 +1,5 @@
-// cronJobs.js
 const cron = require('node-cron');
 const TimeTracker = require("./models/timeTrackerSchema");
-const mongoose = require('mongoose');
 
 class CronJobs {
   constructor() {
@@ -9,140 +7,55 @@ class CronJobs {
   }
 
   init() {
-    // Run every day at midnight (00:00)
-    cron.schedule('0 0 * * *', this.autoCheckoutAtMidnight.bind(this), {
-      timezone: "UTC" // Use UTC timezone for consistency
-    });
-
-    console.log('Cron jobs initialized: Auto-checkout at midnight');
+    // Run every 30 minutes to catch 24h expirations frequently
+    cron.schedule('*/30 * * * *', this.handleAbandonedSessions.bind(this));
+    console.log('Cron jobs initialized: Checking for abandoned sessions every 30 mins.');
   }
 
-  async autoCheckoutAtMidnight() {
+  async handleAbandonedSessions() {
     try {
-      console.log('Running auto-checkout at midnight...');
-      
       const now = new Date();
-      const todayStart = new Date(now);
-      todayStart.setUTCHours(0, 0, 0, 0);
-            const openSessions = await TimeTracker.find({
-        checkInTime: { $exists: true, $ne: null },
+      // The Cut-off: Anything checked in BEFORE this time (24h ago) 
+      // and still open must be closed.
+      const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
+      // Find sessions where checkOutTime is NULL AND checkInTime < 24 hours ago
+      const abandonedSessions = await TimeTracker.find({
         checkOutTime: { $exists: false },
-        date: { $lt: todayStart } 
+        checkInTime: { $lt: twentyFourHoursAgo }
       }).populate('user');
 
-      console.log(`Found ${openSessions.length} open sessions to auto-checkout`);
-
-      let successfullyClosed = 0;
-      let errors = 0;
-
-      for (const session of openSessions) {
-        try {
-          // Get the end of the day for the session's date
-          const sessionDateEnd = new Date(session.date);
-          sessionDateEnd.setUTCHours(23, 59, 59, 999);
-          
-          // Set checkout time to end of the session's date
-          session.checkOutTime = new Date(sessionDateEnd);
-          session.autoCheckedOut = true;
-          
-          // Calculate total hours worked (cap at 24 hours for safety)
-          const totalMs = session.checkOutTime.getTime() - new Date(session.checkInTime).getTime();
-          const totalHours = parseFloat((totalMs / (1000 * 60 * 60)).toFixed(2));
-          
-          session.totalHours = Math.min(totalHours, 24); // Cap at 24 hours
-          
-          // Determine status based on hours worked
-          if (session.totalHours >= 8) {
-            session.status = "Present";
-          } else if (session.totalHours >= 4) {
-            session.status = "Half Day";
-          } else {
-            session.status = "Absent";
-          }
-
-          session.notes = session.notes 
-            ? `${session.notes} | Auto-checked out at midnight` 
-            : 'Auto-checked out at midnight';
-
-          await session.save();
-          successfullyClosed++;
-          
-          const userName = session.user?.name || session.user?.email || session.user || 'Unknown';
-          console.log(`Auto-checked out user ${userName} for date ${session.date.toISOString().split('T')[0]}`);
-
-        } catch (error) {
-          console.error(`Error auto-checking out session ${session._id}:`, error);
-          errors++;
-        }
+      if (abandonedSessions.length > 0) {
+        console.log(`Found ${abandonedSessions.length} abandoned sessions > 24h.`);
       }
 
-      console.log(`Auto-checkout completed: ${successfullyClosed} successful, ${errors} errors`);
-
-    } catch (error) {
-      console.error('Error in auto-checkout cron job:', error);
-    }
-  }
-
-  // Manual trigger for testing/admin purposes
-  async manualAutoCheckout() {
-    console.log('Manual auto-checkout triggered...');
-    return await this.autoCheckoutAtMidnight();
-  }
-
-  // Optional: Also run a cleanup for older open sessions (beyond yesterday)
-  // This is now redundant since autoCheckoutAtMidnight handles all previous days
-  // But keeping it for backward compatibility or specific cleanup needs
-  async cleanupOldOpenSessions() {
-    try {
-      const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
-
-      // Find all open sessions from any previous day
-      const oldOpenSessions = await TimeTracker.find({
-        checkInTime: { $exists: true, $ne: null },
-        checkOutTime: { $exists: false },
-        date: { $lt: todayStart }
-      }).populate('user');
-
-      let cleaned = 0;
-      for (const session of oldOpenSessions) {
+      for (const session of abandonedSessions) {
         try {
-          const sessionDateEnd = new Date(session.date);
-          sessionDateEnd.setUTCHours(23, 59, 59, 999);
+          // 1. Force Close Time
+          // We can set checkout time to (CheckIn + 24h) OR (Now).
+          // Using (CheckIn + 24h) keeps the math clean at exactly 24h.
+          const autoCloseTime = new Date(session.checkInTime.getTime() + (24 * 60 * 60 * 1000));
           
-          session.checkOutTime = new Date(sessionDateEnd);
+          session.checkOutTime = autoCloseTime;
           session.autoCheckedOut = true;
-          
-          const totalMs = session.checkOutTime.getTime() - new Date(session.checkInTime).getTime();
-          const totalHours = parseFloat((totalMs / (1000 * 60 * 60)).toFixed(2));
-          
-          session.totalHours = Math.min(totalHours, 24);
-          
-          if (session.totalHours >= 8) {
-            session.status = "Present";
-          } else if (session.totalHours >= 4) {
-            session.status = "Half Day";
-          } else {
-            session.status = "Absent";
-          }
+          session.totalHours = 24; 
+
+          // 2. APPLY PENALTY RULE:
+          // "if user check in and forget to checkout with in 24 hours then that day should marked as absent"
+          session.status = "Absent"; 
           
           session.notes = session.notes 
-            ? `${session.notes} | Auto-closed: Old open session` 
-            : 'Auto-closed: Old open session';
-          
+            ? `${session.notes} | System Auto-Close (Absent: >24h limit)` 
+            : 'System Auto-Close (Absent: >24h limit)';
+
           await session.save();
-          cleaned++;
-        } catch (error) {
-          console.error(`Error cleaning up session ${session._id}:`, error);
+          console.log(`Auto-closed session for user ${session.user?._id || 'unknown'} as ABSENT.`);
+        } catch (err) {
+          console.error(`Error processing session ${session._id}:`, err);
         }
       }
-
-      console.log(`Cleaned up ${cleaned} old open sessions`);
-      return { cleaned, total: oldOpenSessions.length };
-
     } catch (error) {
-      console.error('Error in cleanup cron job:', error);
-      throw error;
+      console.error('CRON ERROR:', error);
     }
   }
 }
