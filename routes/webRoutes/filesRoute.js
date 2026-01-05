@@ -6,14 +6,15 @@ const { isLoggedIn } = require('../../middlewares/authMiddleware');
 router.use(isLoggedIn);
 
 router.post('/upload', 
-  uploadFile, // This now includes the error handling wrapper
+  uploadFile,
   ctrl.upload
 );
-
+router.get('/public', ctrl.getPublicFiles);
+router.get('/accessible', ctrl.getAccessibleFiles);
+router.get('/my-files', ctrl.getMyFiles);
+router.get('/shared-with-me', ctrl.getSharedWithMe);
 router.get('/:fileId/download', ctrl.downloadUrl);
-router.get('/', ctrl.getAccessibleFiles);
 router.patch('/:fileId/access', ctrl.updateAccess);
 router.patch('/:fileId/soft-delete', ctrl.softDeleteFile);
-router.get('/getMyFiles', ctrl.getMyFiles);
 
 module.exports = router;

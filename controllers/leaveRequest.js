@@ -1,5 +1,6 @@
 const LeaveRequest = require("../models/leaveRequestSchema");
 const User = require("../models/userSchema");
+const TimeTracker = require("../models/timeTrackerSchema");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
@@ -21,12 +22,37 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
   const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
   // Check if user has enough leaves for the specific type
-if (leaveType !== "Unpaid") {
   const userLeaveBalance = user.leaves[leaveType.toLowerCase()] || 0;
   if (userLeaveBalance < daysDiff) {
     throw new BadRequestError(`Not enough ${leaveType} leaves available`);
   }
-}
+
+  // Check for overlapping leave requests (Pending or Approved only)
+  const existingLeaves = await LeaveRequest.find({
+    employee: user._id,
+    status: { $in: ["Pending", "Approved"] }
+  });
+
+  // Check for date overlaps
+  const overlappingLeaves = existingLeaves.filter(leave => {
+    const existingStart = new Date(leave.startDate);
+    const existingEnd = new Date(leave.endDate);
+    const newStart = new Date(startDate);
+    const newEnd = new Date(endDate);
+
+    // Two date ranges overlap if: start1 <= end2 AND start2 <= end1
+    return (existingStart <= newEnd && newStart <= existingEnd);
+  });
+
+  if (overlappingLeaves.length > 0) {
+    const overlappingLeave = overlappingLeaves[0];
+    const overlapStart = new Date(overlappingLeave.startDate).toLocaleDateString();
+    const overlapEnd = new Date(overlappingLeave.endDate).toLocaleDateString();
+    throw new BadRequestError(
+      `You already have a ${overlappingLeave.status.toLowerCase()} leave request from ${overlapStart} to ${overlapEnd}. Please select different dates.`
+    );
+  }
+
   const leaveRequest = new LeaveRequest({
     employee: user._id,
     employeeName: user.name,
@@ -53,26 +79,70 @@ if (leaveType !== "Unpaid") {
     }
   };
 
-  // Only deduct leaves if not unpaid
-  if (leaveType !== "Unpaid") {
-    updateObj.$inc = {};
-    updateObj.$inc[`leaves.${leaveType.toLowerCase()}`] = -daysDiff;
-  }
+  // Deduct leaves and update booked/available leaves
+  updateObj.$inc = {};
+  updateObj.$inc[`leaves.${leaveType.toLowerCase()}`] = -daysDiff;
+  updateObj.$inc.bookedLeaves = daysDiff; // Increment booked leaves
+  updateObj.$inc.avalaibleLeaves = -daysDiff; // Decrement available leaves
 
   await User.findByIdAndUpdate(user._id, updateObj);
+
+  // Create TimeTracker entries for each day in the leave range
+  const timeTrackerEntries = [];
+  const currentDate = new Date(start);
+  
+  while (currentDate <= end) {
+    const dateStart = new Date(currentDate);
+    dateStart.setHours(0, 0, 0, 0);
+    
+    // Check if TimeTracker entry already exists for this date
+    const existingEntry = await TimeTracker.findOne({
+      user: user._id,
+      date: dateStart
+    });
+
+    if (existingEntry) {
+      // Update existing entry to Leave status
+      existingEntry.status = 'Leave';
+      await existingEntry.save();
+    } else {
+      // Create new TimeTracker entry
+      timeTrackerEntries.push({
+        user: user._id,
+        date: dateStart,
+        status: 'Leave',
+        notes: `Leave: ${leaveType} - ${reason || 'No reason provided'}`
+      });
+    }
+    
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  // Bulk insert TimeTracker entries if any
+  if (timeTrackerEntries.length > 0) {
+    await TimeTracker.insertMany(timeTrackerEntries);
+  }
 
   res.status(201).json({ success: true, data: savedLeaveRequest });
 });
 
 
-// Get all Leave Requests
+// Get all Leave Requests (filtered by logged-in user, unless admin)
 exports.getLeaveRequests = catchAsync(async (req, res) => {
   const query = {};
+  
+  // If user is not admin, only show their own leaves
+  if (req.user.role !== "Admin") {
+    query.employee = req.user.id;
+  }
+  
+  // Additional query filters
   if (req.query.employeeName) query.employeeName = req.query.employeeName;
   if (req.query.leaveType) query.leaveType = req.query.leaveType;
   if (req.query.status) query.status = req.query.status;
 
-  const leaveRequests = await LeaveRequest.find(query);
+  const leaveRequests = await LeaveRequest.find(query).sort({ appliedAt: -1 });
   res.json({ success: true, data: leaveRequests });
 });
 
@@ -116,7 +186,6 @@ exports.deleteLeaveRequest = catchAsync(async (req, res) => {
 exports.updateLeaveStatus = catchAsync(async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
-console.log(id)
   const validStatuses = ["Pending", "Approved", "Rejected"];
   if (!status || !validStatuses.includes(status)) {
     throw new BadRequestError("Invalid or missing status");
@@ -138,15 +207,104 @@ console.log(id)
     }
   };
 
-  // If status changed from Approved to Rejected, return leaves
-  if (leaveRequest.status === "Approved" && status === "Rejected" && leaveRequest.leaveType !== "Unpaid") {
+  // Handle status changes and update booked/available leaves accordingly
+  const oldStatus = leaveRequest.status;
+  
+  if (oldStatus === "Pending" && status === "Rejected") {
+    // Reverse the booking: return leaves and decrement booked, increment available
     updateObj.$inc = {};
     updateObj.$inc[`leaves.${leaveRequest.leaveType.toLowerCase()}`] = daysDiff;
+    updateObj.$inc.bookedLeaves = -daysDiff;
+    updateObj.$inc.avalaibleLeaves = daysDiff;
+  } else if (oldStatus === "Approved" && status === "Rejected") {
+    // Return leaves and decrement booked, increment available
+    updateObj.$inc = {};
+    updateObj.$inc[`leaves.${leaveRequest.leaveType.toLowerCase()}`] = daysDiff;
+    updateObj.$inc.bookedLeaves = -daysDiff;
+    updateObj.$inc.avalaibleLeaves = daysDiff;
+  } else if (oldStatus === "Rejected" && status === "Approved") {
+    // Re-apply the booking: deduct leaves and increment booked, decrement available
+    updateObj.$inc = {};
+    updateObj.$inc[`leaves.${leaveRequest.leaveType.toLowerCase()}`] = -daysDiff;
+    updateObj.$inc.bookedLeaves = daysDiff;
+    updateObj.$inc.avalaibleLeaves = -daysDiff;
+  } else if (oldStatus === "Pending" && status === "Approved") {
+    // Status changes from Pending to Approved - no change needed (already counted in bookedLeaves)
+    // But we should ensure leaves are still deducted (they should be from creation)
   }
 
   await User.findByIdAndUpdate(leaveRequest.employee, updateObj, {
     arrayFilters: [{ "elem.leaveId": leaveRequest._id }]
   });
+
+  // Update TimeTracker entries based on status change
+  const leaveStart = new Date(leaveRequest.startDate);
+  const leaveEnd = new Date(leaveRequest.endDate);
+  const currentDate = new Date(leaveStart);
+
+  while (currentDate <= leaveEnd) {
+    const dateStart = new Date(currentDate);
+    dateStart.setHours(0, 0, 0, 0);
+
+    const timeTrackerEntry = await TimeTracker.findOne({
+      user: leaveRequest.employee,
+      date: dateStart
+    });
+
+    if (timeTrackerEntry) {
+      if (status === "Rejected") {
+        // If rejected, check if this TimeTracker entry was created only for the leave
+        // (i.e., no check-in/check-out times, meaning user didn't actually work that day)
+        const wasCreatedForLeave = !timeTrackerEntry.checkInTime && !timeTrackerEntry.checkOutTime && 
+                                   timeTrackerEntry.status === 'Leave';
+        
+        if (wasCreatedForLeave) {
+          // Check if this date is a holiday before deleting
+          const Holiday = require("../models/holidaySchema");
+          const holiday = await Holiday.findOne({ date: dateStart });
+          
+          if (holiday) {
+            // If it's a holiday, update to Holiday status instead of deleting
+            timeTrackerEntry.status = 'Holiday';
+            timeTrackerEntry.notes = `Holiday: ${holiday.holidayName}`;
+            await timeTrackerEntry.save();
+          } else {
+            // Delete the entry since it was only created for the rejected leave
+            await TimeTracker.findByIdAndDelete(timeTrackerEntry._id);
+          }
+        } else {
+          // Entry has check-in/check-out data, meaning user worked that day
+          // Just remove leave status and set to Present (unless it's a holiday)
+          const Holiday = require("../models/holidaySchema");
+          const holiday = await Holiday.findOne({ date: dateStart });
+          
+          if (holiday) {
+            timeTrackerEntry.status = 'Holiday';
+            timeTrackerEntry.notes = timeTrackerEntry.notes?.replace(/Leave:.*/, '').trim() || `Holiday: ${holiday.holidayName}`;
+          } else {
+            timeTrackerEntry.status = 'Present';
+            timeTrackerEntry.notes = timeTrackerEntry.notes?.replace(/Leave:.*/, '').trim() || '';
+          }
+          await timeTrackerEntry.save();
+        }
+      } else if (status === "Approved") {
+        // Ensure status is Leave for approved leaves
+        timeTrackerEntry.status = 'Leave';
+        await timeTrackerEntry.save();
+      }
+    } else if (status === "Approved") {
+      // Create TimeTracker entry if it doesn't exist and status is Approved
+      await TimeTracker.create({
+        user: leaveRequest.employee,
+        date: dateStart,
+        status: 'Leave',
+        notes: `Leave: ${leaveRequest.leaveType} - ${leaveRequest.reason || 'No reason provided'}`
+      });
+    }
+
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
 
   leaveRequest.status = status;
   await leaveRequest.save();

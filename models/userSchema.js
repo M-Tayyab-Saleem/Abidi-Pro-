@@ -145,41 +145,13 @@ const userSchema = new mongoose.Schema(
       daysTaken: Number
     }],
 leaves: {
-  paid: {
+  pto: {
     type: Number,
-    default: 3,
+    default: 10,
   },
   sick: {
     type: Number,
-    default: 4,
-  },
-  majlis: {
-    type: Number,
     default: 5,
-  },
-  casual: {
-    type: Number,
-    default: 0,
-  },
-  earned: {
-    type: Number,
-    default: 0,
-  },
-  maternity: {
-    type: Number,
-    default: 0,
-  },
-  paternity: {
-    type: Number,
-    default: 0,
-  },
-  compensatory: {
-    type: Number,
-    default: 0,
-  },
-  unpaid: {
-    type: Number,
-    default: 0,
   }
 },
     dashboardCards: [{
