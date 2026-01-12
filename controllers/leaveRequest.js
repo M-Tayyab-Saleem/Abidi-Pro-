@@ -127,7 +127,6 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
   res.status(201).json({ success: true, data: savedLeaveRequest });
 });
 
-
 // Get all Leave Requests (filtered by logged-in user, unless admin)
 exports.getLeaveRequests = catchAsync(async (req, res) => {
   const query = {};

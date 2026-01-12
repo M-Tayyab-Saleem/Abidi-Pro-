@@ -36,6 +36,7 @@ exports.createTicket = catchAsync(async (req, res) => {
   }
 
   const ticket = new Ticket(newTicket);
+  console.log("Creating ticket:", ticket);
   ticket.status = 'opened';
   ticket.priority = 'Medium Priority';
   const savedTicket = await ticket.save();

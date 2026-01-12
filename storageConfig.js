@@ -8,14 +8,14 @@ cloudinary.config({
 });
 
 // Main storage for general files
-const storage = new CloudinaryStorage({
+const ticketsAttachmentsStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "abidiPro",
-    allowedFormats: ["png", "jpeg", "jpg", "pdf"],
+    folder: "abidiPro/tickets/attachments",
+    allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx"],
+    resource_type: "raw",
   },
 });
-
 // User profile photos storage
 const userProfileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -59,14 +59,14 @@ const fileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     ...commonFileParams,
+    resource_type: "raw", // ensure DOCX/ZIP-like files are uploaded as raw
+    transformation: undefined, // disable image transformations for raw uploads
     folder: "abidiPro/files",
-    allowed_formats: ["png", "jpeg", "jpg", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"],
+    allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"],
     format: async (req, file) => {
-      // Preserve original format
       return file.originalname.split('.').pop().toLowerCase();
     },
     public_id: (req, file) => {
-      // Generate unique public_id with timestamp
       const timestamp = Date.now();
       const originalName = file.originalname.split('.')[0];
       return `${originalName}_${timestamp}`;
@@ -89,10 +89,10 @@ const folderStorage = new CloudinaryStorage({
 
 module.exports = {
   cloudinary,
-  storage,
   fileStorage,
   folderStorage,
   userProfileStorage,
   timeLogsStorage,
   timesheetsStorage,
+  ticketsAttachmentsStorage
 };

@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const { storage } = require("../../storageConfig");
-const upload = multer({ storage });
+const { ticketAttachmentsStorage } = require("../../storageConfig");
+const upload = multer({ storage: ticketAttachmentsStorage });
 const { isLoggedIn } = require("../../middlewares/authMiddleware");
 
 const ticketController = require("../../controllers/ticketController");
