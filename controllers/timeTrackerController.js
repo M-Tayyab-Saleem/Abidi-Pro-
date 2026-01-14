@@ -2,8 +2,6 @@ const TimeTracker = require("../models/timeTrackerSchema");
 const catchAsync = require("../utils/catchAsync");
 const { NotFoundError, BadRequestError } = require("../utils/ExpressError");
 
-// --- HELPER FUNCTIONS ---
-
 const isWeekend = (date) => {
   const day = date.getDay(); // 0 = Sunday, 6 = Saturday
   return day === 0 || day === 6;
@@ -14,8 +12,6 @@ const getStartOfDayUTC = (date = new Date()) => {
   d.setUTCHours(0, 0, 0, 0);
   return d;
 };
-
-// --- CORE ATTENDANCE CONTROLLERS ---
 
 // 1. Check-In
 exports.checkIn = catchAsync(async (req, res) => {
@@ -43,9 +39,6 @@ exports.checkIn = catchAsync(async (req, res) => {
     });
   }
 
-  // 3. SAFETY NET: Handle "Forgot Checkout" from Yesterday
-  // We look for ANY open session. Since we already passed step 2, 
-  // we know this open session CANNOT be from today. It must be old.
   const abandonedSession = await TimeTracker.findOne({
     user: userId,
     checkOutTime: { $exists: false }
@@ -54,7 +47,6 @@ exports.checkIn = catchAsync(async (req, res) => {
   let previousSessionMsg = "";
 
   if (abandonedSession) {
-    // Close the old session
     abandonedSession.checkOutTime = now;
     abandonedSession.autoCheckedOut = true;
     abandonedSession.status = "Absent"; // Penalty for forgetting
