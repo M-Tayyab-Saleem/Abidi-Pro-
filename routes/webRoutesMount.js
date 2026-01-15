@@ -13,6 +13,7 @@ const timeTrackerRoutes = require("./webRoutes/timeTrackerRoutes");
 const holidayRoutes = require("./webRoutes/holidayRoutes");
 const timeLogRoutes = require("./webRoutes/timeLogRoutes");
 const timesheetRoutes = require("./webRoutes/timesheetRoutes");
+const departmentRoutes = require("./webRoutes/departmentRoutes");
 const { isLoggedIn } = require("../middlewares/authMiddleware");
 
 
@@ -31,5 +32,6 @@ router.use("/timetrackers", timeTrackerRoutes);
 router.use("/holidays", holidayRoutes);
 router.use("/time-logs", timeLogRoutes);
 router.use("/timesheets", timesheetRoutes);
+router.use("/departments", departmentRoutes);
 
 module.exports = router;

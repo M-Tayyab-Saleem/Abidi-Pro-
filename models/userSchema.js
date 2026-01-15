@@ -204,5 +204,49 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
 };
 
+userSchema.pre("findOneAndDelete", async function (next) {
+  const user = await this.model.findOne(this.getFilter());
+  if (!user) return next();
+
+  const userId = user._id;
+
+  // Clean dependent collections
+  await Promise.all([
+    mongoose.model("Ticket").deleteMany({
+      $or: [{ closedBy: userId }, { assignedTo: userId }]
+    }),
+
+    mongoose.model("LeaveRequest").deleteMany({ employee: userId }),
+
+    mongoose.model("TimeLog").deleteMany({ employee: userId }),
+
+    mongoose.model("Timesheet").deleteMany({ employee: userId }),
+
+    mongoose.model("TimeTracker").deleteMany({ user: userId }),
+
+    // Remove user from departments
+    mongoose.model("Department").updateMany(
+      {},
+      {
+        $pull: {
+          members: userId
+        },
+        $set: {
+          manager: null
+        }
+      }
+    ),
+
+    // Fix reporting hierarchy
+    mongoose.model("User").updateMany(
+      { reportsTo: userId },
+      { $set: { reportsTo: null } }
+    )
+  ]);
+
+  next();
+});
+
+
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 module.exports = User;
