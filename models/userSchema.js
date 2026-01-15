@@ -16,10 +16,6 @@ const userSchema = new mongoose.Schema(
       // enum: Intl.supportedValuesOf("timeZone"),
       required: true,
     },
-    reportsTo: {
-      type: String,
-      required: true,
-    },
     password: {
       type: String,
       required: true,
@@ -29,15 +25,40 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    
+    // --- HIERARCHY & ROLE (Updated) ---
+    
+    // 1. Who is their boss? (Self-Referencing)
+    reportsTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+      default: null // CEO has no boss
+    },
+
+    // 2. Security Role (What can they DO?)
     role: {
       type: String,
+      enum: ["SuperAdmin", "Admin", "HR", "Manager", "Employee"], 
       required: true,
+      default: "Employee"
     },
-    designation: {
-      type: String,
-      required: true,
-    },
+
+    // 3. Department Reference (Where do they SIT?)
     department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
+      required: true,
+    },
+
+    // 4. Seniority Level (Helper for sorting: 1=CEO, 5=Intern)
+    jobLevel: {
+      type: Number,
+      default: 5 
+    },
+
+    // ------------------------------------
+
+    designation: {
       type: String,
       required: true,
     },
@@ -144,16 +165,16 @@ const userSchema = new mongoose.Schema(
       status: String,
       daysTaken: Number
     }],
-leaves: {
-  pto: {
-    type: Number,
-    default: 10,
-  },
-  sick: {
-    type: Number,
-    default: 5,
-  }
-},
+    leaves: {
+      pto: {
+        type: Number,
+        default: 10,
+      },
+      sick: {
+        type: Number,
+        default: 5,
+      }
+    },
     dashboardCards: [{
       type: {
         type: String,
@@ -167,7 +188,6 @@ leaves: {
       }
     }]
   },
-
   {
     timestamps: true,
   }
@@ -178,6 +198,7 @@ userSchema.methods.generateAccessToken = function () {
   const payload = {
     userId: this._id,
     role: this.role,
+    department: this.department // Helpful to have this in the token
   };
 
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
