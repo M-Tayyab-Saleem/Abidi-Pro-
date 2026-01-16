@@ -2,163 +2,106 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    azureId: {
       type: String,
+      unique: true,
       required: true,
+      index: true 
     },
     email: {
       type: String,
       required: true,
       unique: true,
     },
-    timeZone: {
-      type: String,
-      // enum: Intl.supportedValuesOf("timeZone"),
-      required: true,
-    },
-    password: {
+    name: {
       type: String,
       required: true,
     },
-    empID: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    
-    // --- HIERARCHY & ROLE (Updated) ---
-    
-    // 1. Who is their boss? (Self-Referencing)
-    reportsTo: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
-      default: null // CEO has no boss
-    },
-
-    // 2. Security Role (What can they DO?)
-    role: {
+        role: {
       type: String,
       enum: ["SuperAdmin", "Admin", "HR", "Manager", "Employee"], 
       required: true,
       default: "Employee"
     },
-
-    // 3. Department Reference (Where do they SIT?)
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Department',
-      required: true,
+      default: null // Made optional for JIT provisioning
     },
-
-    // 4. Seniority Level (Helper for sorting: 1=CEO, 5=Intern)
+    reportsTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+      default: null
+    },
     jobLevel: {
       type: Number,
       default: 5 
     },
-
-    // ------------------------------------
-
     designation: {
       type: String,
-      required: true,
+      default: "New Hire" // Default for JIT
     },
     branch: {
       type: String,
-      required: true,
+      default: "Main"
     },
     empType: {
       type: String,
       enum: ["Permanent", "Contractor", "Intern", "Part Time"],
-      required: true,
+      default: "Permanent",
     },
-    joiningDate: {
-      type: Date,
-      required: true,
-    },
-    phoneNumber: {
-      type: Number,
-      unique: true,
-    },
-    address: {
+    empID: {
       type: String,
+      // Removed required/unique constraint temporarily if JIT creates users without EMP IDs immediately
+      default: "TBD" 
     },
     empStatus: {
       type: String,
       enum: ["Active", "Inactive"],
       default: "Active",
     },
-    salary: {
-      type: Number,
-    },
-    about: {
+    timeZone: {
       type: String,
-    },
-    experience: [
-      {
-        company: String,
-        jobType: String,
-        startDate: Date,
-        endDate: Date,
-        description: String,
-      },
-    ],
-    education: [
-      {
-        institution: String,
-        degree: String,
-        startYear: Number,
-        endYear: Number,
-      },
-    ],
-    DOB: {
-      type: String,
-    },
-    maritalStatus: {
-      type: String,
-    },
-    emergencyContact: [
-      {
-        name: String,
-        relation: String,
-        phone: Number,
-      },
-    ],
-    addedby: {
-      type: String,
-    },
-    otp: {
-      type: Number,
-    },
-    otpExpires: {
-      type: Date,
-    },
-    passwordResetToken: {
-      type: String,
-    },
-    passwordResetExpires: {
-      type: Date,
-    },
-    refreshToken: {
-      type: String,
-      select: false,
-    },
-    avalaibleLeaves: {
-      type: Number,
-      default: 15,
-    },
-    bookedLeaves: {
-      type: Number,
-      default: 0,
+      default: "UTC"
     },
     avatar: {
       type: String,
       default: ""
     },
+    joiningDate: { type: Date, default: Date.now },
+    phoneNumber: {
+    type: String,
+    unique: true, 
+    sparse: true   
+},
+    address: { type: String },
+    salary: { type: Number },
+    about: { type: String },
+    experience: [{
+      company: String,
+      jobType: String,
+      startDate: Date,
+      endDate: Date,
+      description: String,
+    }],
+    education: [{
+      institution: String,
+      degree: String,
+      startYear: Number,
+      endYear: Number,
+    }],
+    DOB: { type: String },
+    maritalStatus: { type: String },
+    emergencyContact: [{
+      name: String,
+      relation: String,
+      phone: Number,
+    }],
+    addedby: { type: String },
+        avalaibleLeaves: { type: Number, default: 15 },
+    bookedLeaves: { type: Number, default: 0 },
     leaveHistory: [{
-      leaveId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "LeaveRequest"
-      },
+      leaveId: { type: mongoose.Schema.Types.ObjectId, ref: "LeaveRequest" },
       leaveType: String,
       startDate: Date,
       endDate: Date,
@@ -166,26 +109,16 @@ const userSchema = new mongoose.Schema(
       daysTaken: Number
     }],
     leaves: {
-      pto: {
-        type: Number,
-        default: 10,
-      },
-      sick: {
-        type: Number,
-        default: 5,
-      }
+      pto: { type: Number, default: 10 },
+      sick: { type: Number, default: 5 }
     },
     dashboardCards: [{
       type: {
         type: String,
-        required: true,
         enum: ["feeds", "attendance", "holidays", "todo", "notes", "recent activities",
           "birthdays", "leavelog", "upcomingDeadlines", "timeoffBalance", "tasksAssignedToMe"]
       },
-      id: {
-        type: String,
-        required: true
-      }
+      id: { type: String }
     }]
   },
   {
@@ -193,16 +126,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.methods.generateAccessToken = function () {
-  const jwt = require("jsonwebtoken");
-  const payload = {
-    userId: this._id,
-    role: this.role,
-    department: this.department // Helpful to have this in the token
-  };
-
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
-};
 
 userSchema.pre("findOneAndDelete", async function (next) {
   const user = await this.model.findOne(this.getFilter());
