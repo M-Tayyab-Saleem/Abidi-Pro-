@@ -7,15 +7,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Main storage for general files
-const ticketsAttachmentsStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "abidiPro/tickets/attachments",
-    allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx"],
-    resource_type: "raw",
-  },
-});
 // User profile photos storage
 const userProfileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -50,7 +41,17 @@ const timesheetsStorage = new CloudinaryStorage({
   params: {
     folder: "abidiPro/timesheets/attachments",
     allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx"],
-    resource_type: "raw",
+    resource_type: "auto",
+  },
+});
+
+// Main storage for general files
+const ticketsAttachmentsStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "abidiPro/tickets/attachments",
+    allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx"],
+    resource_type: "auto", // CHANGED FROM "raw" TO "auto"
   },
 });
 

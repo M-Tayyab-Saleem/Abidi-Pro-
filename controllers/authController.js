@@ -7,25 +7,27 @@ exports.getCurrentUser = async (req, res) => {
   }
 
   // Fetch full details from DB to ensure latest data
-  const user = await User.findById(req.user.id).populate('department');
-
+const user = await User.findById(req.user.id)
+  .populate({
+    path: "department",
+    populate: {
+      path: "members",
+      model: "User",
+      select: "name email designation avatar role empStatus"
+    }
+  })
+  .populate({
+    path: "reportsTo",
+    select: "name email designation avatar role"
+  });
+  console.log("Fetched user for getCurrentUser:", user);  
   if (!user) {
     throw new UnauthorizedError("User record not found");
   }
 
   res.status(200).json({
     message: "Authenticated via Azure",
-    user: {
-      id: user._id,
-      azureId: user.azureId,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      department: user.department,
-      avatar: user.avatar,
-      designation: user.designation,
-      // Add other necessary frontend fields
-    },
+    user: user,
   });
 };
 

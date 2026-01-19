@@ -74,7 +74,8 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
         startDate: start,
         endDate: end,
         status: 'Pending',
-        daysTaken: daysDiff
+        daysTaken: daysDiff,
+        reason: reason
       }
     }
   };

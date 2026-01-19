@@ -106,7 +106,8 @@ const userSchema = new mongoose.Schema(
       startDate: Date,
       endDate: Date,
       status: String,
-      daysTaken: Number
+      daysTaken: Number,
+      reason: String,
     }],
     leaves: {
       pto: { type: Number, default: 10 },

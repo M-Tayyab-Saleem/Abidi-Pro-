@@ -4,47 +4,43 @@ const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 
 // Create Timesheet
-// Create Timesheet
 exports.createTimesheet = catchAsync(async (req, res) => {
-  const {name, description, timeLogs } = req.body;
+  let { name, description, timeLogs, date } = req.body;
   const employee = req.user.id;
   const attachments = req.files;
   const employeeName = req.user.name;
-  const today = new Date();
   
-  // Set time to beginning of day for date comparison
-  today.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(today);
-  endOfDay.setHours(23, 59, 59, 999);
+  // FIX: Handle FormData 'timeLogs' field.
+  // If only 1 log is sent, it comes as a string. If multiple, it comes as an array.
+  let logIds = [];
+  if (Array.isArray(timeLogs)) {
+    logIds = timeLogs;
+  } else if (timeLogs) {
+    logIds = [timeLogs];
+  }
 
-  // Check if timesheet already exists for this employee today
-  const existingTimesheet = await Timesheet.findOne({
-    employee,
-    date: {
-      $gte: today,
-      $lte: endOfDay
-    }
-  });
+  if (logIds.length === 0) {
+    throw new BadRequestError("No time logs provided");
+  }
 
-  // if (existingTimesheet) {
-  //   throw new BadRequestError("You can only create one timesheet per day");
-  // }
+  // Determine Timesheet Date (Use selected date if sent, otherwise today)
+  const timesheetDate = date ? new Date(date) : new Date();
 
   // Verify all time logs belong to the employee and aren't already in a timesheet
   const logs = await TimeLog.find({
-    _id: { $in: timeLogs },
+    _id: { $in: logIds },
     employee,
     isAddedToTimesheet: false,
   });
 
-  if (logs.length !== timeLogs.length) {
+  if (logs.length !== logIds.length) {
     throw new BadRequestError("Invalid time logs or logs already added to another timesheet");
   }
 
   // Calculate total hours
   const submittedHours = logs.reduce((total, log) => total + log.hours, 0);
 
-    const attachmentData = attachments?.map(file => ({
+  const attachmentData = attachments?.map(file => ({
     public_id: file.public_id,
     url: file.path,
     originalname: file.originalname,
@@ -52,15 +48,15 @@ exports.createTimesheet = catchAsync(async (req, res) => {
     size: file.size
   }));
 
-  // Create timesheet with current date
+  // Create timesheet
   const timesheet = new Timesheet({
     name,
     description,
     employee,
     employeeName,
-    date: new Date(), // Store exact creation time
+    date: timesheetDate, 
     submittedHours,
-    timeLogs,
+    timeLogs: logIds,
     attachments: attachmentData || [],
   });
 
@@ -69,7 +65,7 @@ exports.createTimesheet = catchAsync(async (req, res) => {
 
   // Update time logs to mark them as added to timesheet
   await TimeLog.updateMany(
-    { _id: { $in: timeLogs } },
+    { _id: { $in: logIds } },
     { isAddedToTimesheet: true, timesheet: savedTimesheet._id }
   );
 
@@ -84,8 +80,10 @@ exports.getEmployeeTimesheets = catchAsync(async (req, res) => {
   let query = { employee };
   
   if (month && year) {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    // Construct date range for the month in UTC
+    // Using simple string construction to avoid timezone shifts
+    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
     
     query.date = {
       $gte: startDate,
@@ -93,7 +91,10 @@ exports.getEmployeeTimesheets = catchAsync(async (req, res) => {
     };
   }
 
-  const timesheets = await Timesheet.find(query).populate("timeLogs");
+  const timesheets = await Timesheet.find(query)
+    .populate("timeLogs")
+    .sort({ date: -1 }); // Sort by newest first
+
   res.status(200).json(timesheets);
 });
 
@@ -126,18 +127,13 @@ exports.updateTimesheetStatus = catchAsync(async (req, res) => {
 
 // Get All Timesheets (for admin)
 exports.getAllTimesheets = catchAsync(async (req, res) => {
-  const timesheets = await Timesheet.find().populate("timeLogs");
-  res.status(200).json(timesheets);
-});
-
-exports.getAllTimesheets = catchAsync(async (req, res) => {
   const { month, year } = req.query;
   
   let query = {};
   
   if (month && year) {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
     
     query.date = {
       $gte: startDate,
@@ -150,21 +146,4 @@ exports.getAllTimesheets = catchAsync(async (req, res) => {
     .sort({ date: -1 });
     
   res.status(200).json(timesheets);
-});
-
-// Update Timesheet Status
-exports.updateTimesheetStatus = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const { status, approvedHours } = req.body;
-
-  const timesheet = await Timesheet.findById(id);
-  if (!timesheet) throw new NotFoundError("Timesheet");
-
-  timesheet.status = status;
-  if (approvedHours !== undefined) {
-    timesheet.approvedHours = approvedHours;
-  }
-
-  const updatedTimesheet = await timesheet.save();
-  res.status(200).json(updatedTimesheet);
 });
