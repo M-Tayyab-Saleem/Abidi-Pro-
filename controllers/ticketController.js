@@ -4,6 +4,7 @@ const { NotFoundError } = require("../utils/ExpressError");
 const nodemailer = require("nodemailer");
 const User = require("../models/userSchema");
 const { cloudinary } = require("../storageConfig");
+const axios = require("axios");
 
 
 const transporter = nodemailer.createTransport({
@@ -549,39 +550,54 @@ exports.downloadTicketAttachment = catchAsync(async (req, res) => {
   }
   
   try {
-    // Check if it's a Cloudinary attachment or direct URL
+    // Always use Cloudinary URL generation with proper signing
     if (attachment.public_id) {
-      // Cloudinary attachment
       const downloadUrl = cloudinary.url(attachment.public_id, {
         secure: true,
         resource_type: 'raw',
         flags: 'attachment',
         attachment: attachment.name || attachment.originalname,
-        sign_url: true
+        sign_url: true, // This is crucial for generating a signed URL
+        type: 'authenticated' // Make sure it's authenticated type
       });
       
+      console.log("Generated Cloudinary download URL:", downloadUrl);
       return res.redirect(downloadUrl);
-    } else if (attachment.url) {
-      // Direct URL attachment
-      const response = await fetch(attachment.url);
-      const buffer = await response.buffer();
-      
-      res.set({
-        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${attachment.name || attachment.originalname || 'file'}"`,
-        'Content-Length': buffer.length
-      });
-      
-      return res.send(buffer);
-    } else {
+    } 
+    // For URLs without public_id (direct uploads), use the stored URL
+    else if (attachment.url) {
+      console.log("Using direct URL:", attachment.url);
+      return res.redirect(attachment.url);
+    } 
+    else {
       throw new BadRequestError("No valid attachment URL found");
     }
     
   } catch (error) {
     console.error("Download error:", error);
     
-    // Fallback to direct URL
+    // Ultimate fallback - try to construct a Cloudinary URL from the stored URL
     if (attachment.url) {
+      try {
+        // Extract public_id from the URL if possible
+        const urlParts = attachment.url.split('/');
+        const uploadIndex = urlParts.indexOf('upload');
+        if (uploadIndex > -1 && uploadIndex < urlParts.length - 1) {
+          const versionAndPublicId = urlParts.slice(uploadIndex + 1).join('/');
+          const downloadUrl = cloudinary.url(versionAndPublicId, {
+            secure: true,
+            resource_type: 'raw',
+            flags: 'attachment',
+            attachment: attachment.name || attachment.originalname,
+            sign_url: true
+          });
+          
+          return res.redirect(downloadUrl);
+        }
+      } catch (parseError) {
+        console.error("Failed to parse URL:", parseError);
+      }
+      
       return res.redirect(attachment.url);
     }
     
