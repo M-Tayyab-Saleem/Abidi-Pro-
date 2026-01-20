@@ -3,8 +3,7 @@ const catchAsync = require("../utils/catchAsync");
 const { NotFoundError } = require("../utils/ExpressError");
 const nodemailer = require("nodemailer");
 const User = require("../models/userSchema");
-const { cloudinary } = require("../storageConfig");
-const axios = require("axios");
+const { containerClient, containerName } = require("../config/azureConfig");const axios = require("axios");
 
 
 const transporter = nodemailer.createTransport({
@@ -31,10 +30,11 @@ exports.createTicket = catchAsync(async (req, res) => {
     closedBy: req.user?.id || undefined
   };
 
-  if (req.file && req.file.path) {
+if (req.file) {
     newTicket.attachments.push({
       name: req.file.originalname,
-      url: req.file.path
+      url: req.file.url || req.file.path, // Azure URL
+      blobName: req.file.blobName // Store this for secure downloads
     });
   }
 
@@ -545,62 +545,31 @@ exports.downloadTicketAttachment = catchAsync(async (req, res) => {
   if (!ticket) throw new NotFoundError("Ticket");
   
   const attachment = ticket.attachments.id(attachmentId);
-  if (!attachment) {
-    throw new NotFoundError("Attachment");
-  }
+  if (!attachment) throw new NotFoundError("Attachment");
   
   try {
-    // Always use Cloudinary URL generation with proper signing
-    if (attachment.public_id) {
-      const downloadUrl = cloudinary.url(attachment.public_id, {
-        secure: true,
-        resource_type: 'raw',
-        flags: 'attachment',
-        attachment: attachment.name || attachment.originalname,
-        sign_url: true, // This is crucial for generating a signed URL
-        type: 'authenticated' // Make sure it's authenticated type
+    // 1. Try to use blobName to generate a secure SAS URL
+    if (attachment.blobName) {
+      const blockBlobClient = containerClient.getBlockBlobClient(attachment.blobName);
+      
+      // Generate SAS URL (valid for 5 mins)
+      const sasUrl = await blockBlobClient.generateSasUrl({
+        permissions: "r", // Read permission
+        expiresOn: new Date(new Date().valueOf() + 300 * 1000), 
+        contentDisposition: `attachment; filename="${attachment.name}"`
       });
       
-      console.log("Generated Cloudinary download URL:", downloadUrl);
-      return res.redirect(downloadUrl);
+      return res.redirect(sasUrl);
     } 
-    // For URLs without public_id (direct uploads), use the stored URL
+    // 2. Fallback: If no blobName (legacy files), try direct URL
     else if (attachment.url) {
-      console.log("Using direct URL:", attachment.url);
       return res.redirect(attachment.url);
     } 
     else {
       throw new BadRequestError("No valid attachment URL found");
     }
-    
   } catch (error) {
     console.error("Download error:", error);
-    
-    // Ultimate fallback - try to construct a Cloudinary URL from the stored URL
-    if (attachment.url) {
-      try {
-        // Extract public_id from the URL if possible
-        const urlParts = attachment.url.split('/');
-        const uploadIndex = urlParts.indexOf('upload');
-        if (uploadIndex > -1 && uploadIndex < urlParts.length - 1) {
-          const versionAndPublicId = urlParts.slice(uploadIndex + 1).join('/');
-          const downloadUrl = cloudinary.url(versionAndPublicId, {
-            secure: true,
-            resource_type: 'raw',
-            flags: 'attachment',
-            attachment: attachment.name || attachment.originalname,
-            sign_url: true
-          });
-          
-          return res.redirect(downloadUrl);
-        }
-      } catch (parseError) {
-        console.error("Failed to parse URL:", parseError);
-      }
-      
-      return res.redirect(attachment.url);
-    }
-    
     throw new BadRequestError("Failed to generate download link");
   }
 });

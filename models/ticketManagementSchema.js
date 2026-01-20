@@ -14,7 +14,8 @@ const ticketSchema = new mongoose.Schema({
   },
   attachments: [{
     name: String,
-    url: String
+    url: String,
+    blobName: String
   }],
   closedBy: {
     type: mongoose.Schema.Types.ObjectId,

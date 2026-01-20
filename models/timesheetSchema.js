@@ -50,6 +50,7 @@ const timesheetSchema = new mongoose.Schema(
         originalname: String,
         format: String,
         size: Number,
+        blobName: String
       },
     ],
   },

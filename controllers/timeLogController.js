@@ -3,6 +3,7 @@ const Timesheet = require("../models/timesheetSchema");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
 const { cloudinary } = require("../storageConfig");
+const { containerClient } = require("../config/azureConfig");
 
 
 // Create Time Log
@@ -10,12 +11,11 @@ exports.createTimeLog = catchAsync(async (req, res) => {
   const { job, date, description, hours } = req.body;
   const employee = req.user.id;
   
-  // Process uploaded files
-  const attachments = req.files?.map(file => ({
-    public_id: file.public_id,
-    url: file.path,
+const attachments = req.files?.map(file => ({
+    blobName: file.blobName, // Store blobName instead of public_id
+    url: file.url || file.path,
     originalname: file.originalname,
-    format: file.format,
+    format: file.mimetype,
     size: file.size
   })) || [];
 
@@ -69,14 +69,12 @@ exports.updateTimeLog = catchAsync(async (req, res) => {
   if (timeLog.isAddedToTimesheet) {
     throw new BadRequestError("Cannot update time log already added to a timesheet");
   }
-
-  // Process new attachments if any
-  if (req.files && req.files.length > 0) {
+if (req.files && req.files.length > 0) {
     timeLog.attachments = req.files.map(file => ({
-      public_id: file.public_id,
-      url: file.path,
+      blobName: file.blobName,
+      url: file.url || file.path,
       originalname: file.originalname,
-      format: file.format,
+      format: file.mimetype,
       size: file.size
     }));
   }
@@ -114,45 +112,24 @@ exports.downloadTimeLogAttachment = catchAsync(async (req, res) => {
   if (!timeLog) throw new NotFoundError("TimeLog");
   
   const attachment = timeLog.attachments.id(attachmentId);
-  if (!attachment) {
-    throw new NotFoundError("Attachment");
-  }
+  if (!attachment) throw new NotFoundError("Attachment");
   
   try {
-    if (attachment.public_id) {
-      // Cloudinary attachment
-      const downloadUrl = cloudinary.url(attachment.public_id, {
-        secure: true,
-        resource_type: 'raw',
-        flags: 'attachment',
-        attachment: attachment.originalname,
-        sign_url: true
+    if (attachment.blobName) {
+      const blockBlobClient = containerClient.getBlockBlobClient(attachment.blobName);
+      const sasUrl = await blockBlobClient.generateSasUrl({
+        permissions: "r",
+        expiresOn: new Date(new Date().valueOf() + 300 * 1000),
+        contentDisposition: `attachment; filename="${attachment.originalname}"`
       });
-      
-      return res.redirect(downloadUrl);
+      return res.redirect(sasUrl);
     } else if (attachment.url) {
-      // Direct URL
-      const response = await fetch(attachment.url);
-      const buffer = await response.buffer();
-      
-      res.set({
-        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${attachment.originalname}"`,
-        'Content-Length': buffer.length
-      });
-      
-      return res.send(buffer);
+      return res.redirect(attachment.url);
     } else {
       throw new BadRequestError("No valid attachment URL found");
     }
-    
   } catch (error) {
     console.error("Download error:", error);
-    
-    if (attachment.url) {
-      return res.redirect(attachment.url);
-    }
-    
     throw new BadRequestError("Failed to generate download link");
   }
 });

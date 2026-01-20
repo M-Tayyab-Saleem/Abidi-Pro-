@@ -38,6 +38,7 @@ const timeLogSchema = new mongoose.Schema(
         originalname: String,
         format: String,
         size: Number,
+        blobName: String
       },
     ],
     isAddedToTimesheet: {
