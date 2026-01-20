@@ -24,6 +24,12 @@ const timeLogSchema = new mongoose.Schema(
       required: true,
       min: 0,
       max: 24,
+      validate: {
+        validator: function (v) {
+          return v <= 24 && v >= 0;
+        },
+        message: "Hours must be between 0 and 24",
+      },
     },
     attachments: [
       {
@@ -45,8 +51,9 @@ const timeLogSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-const TimeLog = mongoose.models.TimeLog || mongoose.model("TimeLog", timeLogSchema);
+const TimeLog =
+  mongoose.models.TimeLog || mongoose.model("TimeLog", timeLogSchema);
 module.exports = TimeLog;

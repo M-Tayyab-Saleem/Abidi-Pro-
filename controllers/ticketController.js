@@ -3,6 +3,8 @@ const catchAsync = require("../utils/catchAsync");
 const { NotFoundError } = require("../utils/ExpressError");
 const nodemailer = require("nodemailer");
 const User = require("../models/userSchema");
+const { cloudinary } = require("../storageConfig");
+
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -532,4 +534,57 @@ exports.addTicketResponse = catchAsync(async (req, res) => {
   await ticket.save();
 
   res.status(200).json(ticket);
+});
+
+
+exports.downloadTicketAttachment = catchAsync(async (req, res) => {
+  const { id, attachmentId } = req.params;
+  
+  const ticket = await Ticket.findById(id);
+  if (!ticket) throw new NotFoundError("Ticket");
+  
+  const attachment = ticket.attachments.id(attachmentId);
+  if (!attachment) {
+    throw new NotFoundError("Attachment");
+  }
+  
+  try {
+    // Check if it's a Cloudinary attachment or direct URL
+    if (attachment.public_id) {
+      // Cloudinary attachment
+      const downloadUrl = cloudinary.url(attachment.public_id, {
+        secure: true,
+        resource_type: 'raw',
+        flags: 'attachment',
+        attachment: attachment.name || attachment.originalname,
+        sign_url: true
+      });
+      
+      return res.redirect(downloadUrl);
+    } else if (attachment.url) {
+      // Direct URL attachment
+      const response = await fetch(attachment.url);
+      const buffer = await response.buffer();
+      
+      res.set({
+        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${attachment.name || attachment.originalname || 'file'}"`,
+        'Content-Length': buffer.length
+      });
+      
+      return res.send(buffer);
+    } else {
+      throw new BadRequestError("No valid attachment URL found");
+    }
+    
+  } catch (error) {
+    console.error("Download error:", error);
+    
+    // Fallback to direct URL
+    if (attachment.url) {
+      return res.redirect(attachment.url);
+    }
+    
+    throw new BadRequestError("Failed to generate download link");
+  }
 });

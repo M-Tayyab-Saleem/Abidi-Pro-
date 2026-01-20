@@ -27,5 +27,11 @@ router.patch("/:id/priority", ticketController.updateTicketPriority);
 router.patch("/:id/assign", ticketController.updateTicketAssignee);
 router.post("/:id/response",isLoggedIn, ticketController.addTicketResponse);
 
+// Add this route
+router.get('/:id/attachments/:attachmentId/download', 
+  isLoggedIn, 
+  ticketController.downloadTicketAttachment
+);
+
 
 module.exports = router;

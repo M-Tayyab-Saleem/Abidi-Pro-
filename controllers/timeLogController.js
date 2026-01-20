@@ -2,6 +2,8 @@ const TimeLog = require("../models/timeLogsSchema");
 const Timesheet = require("../models/timesheetSchema");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
+const { cloudinary } = require("../storageConfig");
+
 
 // Create Time Log
 exports.createTimeLog = catchAsync(async (req, res) => {
@@ -102,4 +104,55 @@ exports.deleteTimeLog = catchAsync(async (req, res) => {
 
   await timeLog.deleteOne();
   res.status(200).json({ message: "Time log deleted successfully" });
+});
+
+
+exports.downloadTimeLogAttachment = catchAsync(async (req, res) => {
+  const { id, attachmentId } = req.params;
+  
+  const timeLog = await TimeLog.findById(id);
+  if (!timeLog) throw new NotFoundError("TimeLog");
+  
+  const attachment = timeLog.attachments.id(attachmentId);
+  if (!attachment) {
+    throw new NotFoundError("Attachment");
+  }
+  
+  try {
+    if (attachment.public_id) {
+      // Cloudinary attachment
+      const downloadUrl = cloudinary.url(attachment.public_id, {
+        secure: true,
+        resource_type: 'raw',
+        flags: 'attachment',
+        attachment: attachment.originalname,
+        sign_url: true
+      });
+      
+      return res.redirect(downloadUrl);
+    } else if (attachment.url) {
+      // Direct URL
+      const response = await fetch(attachment.url);
+      const buffer = await response.buffer();
+      
+      res.set({
+        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${attachment.originalname}"`,
+        'Content-Length': buffer.length
+      });
+      
+      return res.send(buffer);
+    } else {
+      throw new BadRequestError("No valid attachment URL found");
+    }
+    
+  } catch (error) {
+    console.error("Download error:", error);
+    
+    if (attachment.url) {
+      return res.redirect(attachment.url);
+    }
+    
+    throw new BadRequestError("Failed to generate download link");
+  }
 });

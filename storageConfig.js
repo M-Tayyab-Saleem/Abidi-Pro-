@@ -45,13 +45,12 @@ const timesheetsStorage = new CloudinaryStorage({
   },
 });
 
-// Main storage for general files
 const ticketsAttachmentsStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "abidiPro/tickets/attachments",
-    allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx"],
-    resource_type: "auto", // CHANGED FROM "raw" TO "auto"
+    allowedFormats: ["png", "jpeg", "jpg", "pdf", "doc", "docx", "xls", "xlsx", "txt", "zip"],
+    resource_type: "raw", // CHANGED TO "raw"
   },
 });
 

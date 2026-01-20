@@ -17,4 +17,9 @@ router
     .put(isLoggedIn, upload.array("attachments", 5), timeLogController.updateTimeLog)
     .delete(isLoggedIn, timeLogController.deleteTimeLog);
 
+router.get('/:id/attachments/:attachmentId/download', 
+  isLoggedIn, 
+  timeLogController.downloadTimeLogAttachment
+);
+
 module.exports = router;

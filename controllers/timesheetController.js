@@ -2,6 +2,8 @@ const Timesheet = require("../models/timesheetSchema");
 const TimeLog = require("../models/timeLogsSchema");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
+const { cloudinary } = require("../storageConfig");
+
 
 // Create Timesheet
 exports.createTimesheet = catchAsync(async (req, res) => {
@@ -10,8 +12,7 @@ exports.createTimesheet = catchAsync(async (req, res) => {
   const attachments = req.files;
   const employeeName = req.user.name;
   
-  // FIX: Handle FormData 'timeLogs' field.
-  // If only 1 log is sent, it comes as a string. If multiple, it comes as an array.
+  // FIX: Handle FormData 'timeLogs' field
   let logIds = [];
   if (Array.isArray(timeLogs)) {
     logIds = timeLogs;
@@ -23,8 +24,34 @@ exports.createTimesheet = catchAsync(async (req, res) => {
     throw new BadRequestError("No time logs provided");
   }
 
-  // Determine Timesheet Date (Use selected date if sent, otherwise today)
-  const timesheetDate = date ? new Date(date) : new Date();
+  // Determine Timesheet Date - Use the date from the request (could be any date)
+  let timesheetDate;
+  if (date) {
+    timesheetDate = new Date(date);
+  } else {
+    // If no date provided, use today
+    timesheetDate = new Date();
+  }
+  
+  // Reset time to beginning of day for comparison
+  const timesheetDateStart = new Date(timesheetDate);
+  timesheetDateStart.setHours(0, 0, 0, 0);
+  
+  const timesheetDateEnd = new Date(timesheetDate);
+  timesheetDateEnd.setHours(23, 59, 59, 999);
+  
+  // VALIDATION 1: Check if timesheet already exists for THIS SPECIFIC DATE
+  const existingTimesheet = await Timesheet.findOne({
+    employee,
+    date: {
+      $gte: timesheetDateStart,
+      $lte: timesheetDateEnd
+    }
+  });
+  
+  if (existingTimesheet) {
+    throw new BadRequestError(`You have already submitted a timesheet for ${timesheetDate.toLocaleDateString()}. Only one timesheet per day is allowed.`);
+  }
 
   // Verify all time logs belong to the employee and aren't already in a timesheet
   const logs = await TimeLog.find({
@@ -37,8 +64,52 @@ exports.createTimesheet = catchAsync(async (req, res) => {
     throw new BadRequestError("Invalid time logs or logs already added to another timesheet");
   }
 
-  // Calculate total hours
+  // Calculate total hours for this timesheet
   const submittedHours = logs.reduce((total, log) => total + log.hours, 0);
+  
+  // VALIDATION 2: Check if this timesheet would exceed 40 hours for the week
+  // Get start and end of the week (Monday to Sunday) based on the timesheet date
+  const startOfWeek = new Date(timesheetDate);
+  startOfWeek.setDate(timesheetDate.getDate() - timesheetDate.getDay() + 1); // Monday
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  // Get all timesheets for this employee in the same week
+  const weeklyTimesheets = await Timesheet.find({
+    employee,
+    date: {
+      $gte: startOfWeek,
+      $lte: endOfWeek
+    },
+    status: { $in: ["Pending", "Approved"] } // Only count pending and approved
+  });
+  
+  // Calculate total hours already submitted this week
+  const weeklyTotalHours = weeklyTimesheets.reduce((total, sheet) => 
+    total + sheet.submittedHours, 0
+  );
+  
+  // Check if adding this timesheet would exceed 40 hours
+  if (weeklyTotalHours + submittedHours > 40) {
+    throw new BadRequestError(
+      `Weekly hour limit (40 hours) exceeded. You have ${weeklyTotalHours} hours already submitted for week of ${startOfWeek.toLocaleDateString()}.`
+    );
+  }
+
+  // VALIDATION 3: Ensure all time logs match the timesheet date
+  const mismatchedLogs = logs.filter(log => {
+    const logDate = new Date(log.date);
+    return logDate.toDateString() !== timesheetDate.toDateString();
+  });
+  
+  if (mismatchedLogs.length > 0) {
+    throw new BadRequestError(
+      `All time logs must be for the same date as the timesheet (${timesheetDate.toLocaleDateString()}). Found logs for different dates.`
+    );
+  }
 
   const attachmentData = attachments?.map(file => ({
     public_id: file.public_id,
@@ -48,13 +119,13 @@ exports.createTimesheet = catchAsync(async (req, res) => {
     size: file.size
   }));
 
-  // Create timesheet
+  // Create timesheet with the specific date
   const timesheet = new Timesheet({
     name,
     description,
     employee,
     employeeName,
-    date: timesheetDate, 
+    date: timesheetDate, // Store the specific date
     submittedHours,
     timeLogs: logIds,
     attachments: attachmentData || [],
@@ -72,28 +143,83 @@ exports.createTimesheet = catchAsync(async (req, res) => {
   res.status(201).json(savedTimesheet);
 });
 
+// Updated getWeeklyTimesheets function
+exports.getWeeklyTimesheets = catchAsync(async (req, res) => {
+  const employee = req.user.id;
+  const { weekStart } = req.query; // Expecting YYYY-MM-DD format for Monday
+  
+  if (!weekStart) {
+    throw new BadRequestError("Week start date is required");
+  }
+  
+  const startDate = new Date(weekStart);
+  if (isNaN(startDate.getTime())) {
+    throw new BadRequestError("Invalid date format");
+  }
+  
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6); // Add 6 days to get Sunday
+  endDate.setHours(23, 59, 59, 999);
+  
+  // Get all timesheets for this week
+  const timesheets = await Timesheet.find({
+    employee,
+    date: {
+      $gte: startDate,
+      $lte: endDate
+    }
+  })
+  .populate("timeLogs")
+  .sort({ date: 1 }); // Sort by date ascending
+  
+  // Calculate weekly total
+  const weeklyTotal = timesheets.reduce((total, sheet) => total + sheet.submittedHours, 0);
+  
+  // Convert dates to ISO strings for frontend consistency
+  const processedTimesheets = timesheets.map(timesheet => ({
+    ...timesheet.toObject(),
+    date: timesheet.date.toISOString()
+  }));
+  
+  res.status(200).json({
+    weekStart: startDate.toISOString(),
+    weekEnd: endDate.toISOString(),
+    timesheets: processedTimesheets,
+    weeklyTotal,
+    remainingHours: Math.max(0, 40 - weeklyTotal)
+  });
+});
+
 // Get Timesheets for Employee
 exports.getEmployeeTimesheets = catchAsync(async (req, res) => {
   const employee = req.user.id;
-  const { month, year } = req.query;
+  const { month, year, startDate, endDate } = req.query;
   
   let query = { employee };
   
-  if (month && year) {
-    // Construct date range for the month in UTC
-    // Using simple string construction to avoid timezone shifts
-    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+  // Support Date Range Query (Week View)
+  if (startDate && endDate) {
+    query.date = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate)
+    };
+  } 
+  // Fallback to Month View
+  else if (month && year) {
+    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
     
     query.date = {
-      $gte: startDate,
-      $lte: endDate
+      $gte: start,
+      $lte: end
     };
   }
 
   const timesheets = await Timesheet.find(query)
     .populate("timeLogs")
-    .sort({ date: -1 }); // Sort by newest first
+    .sort({ date: -1 });
 
   res.status(200).json(timesheets);
 });
@@ -108,7 +234,7 @@ exports.getTimesheetById = catchAsync(async (req, res) => {
   res.status(200).json(timesheet);
 });
 
-// Update Timesheet Status (for approval/rejection)
+// Update Timesheet Status
 exports.updateTimesheetStatus = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { status, approvedHours } = req.body;
@@ -125,7 +251,7 @@ exports.updateTimesheetStatus = catchAsync(async (req, res) => {
   res.status(200).json(updatedTimesheet);
 });
 
-// Get All Timesheets (for admin)
+// Get All Timesheets (admin)
 exports.getAllTimesheets = catchAsync(async (req, res) => {
   const { month, year } = req.query;
   
@@ -146,4 +272,56 @@ exports.getAllTimesheets = catchAsync(async (req, res) => {
     .sort({ date: -1 });
     
   res.status(200).json(timesheets);
+});
+
+
+exports.downloadAttachment = catchAsync(async (req, res) => {
+  const { id, attachmentId } = req.params;
+  
+  const timesheet = await Timesheet.findById(id);
+  if (!timesheet) throw new NotFoundError("Timesheet");
+  
+  const attachment = timesheet.attachments.id(attachmentId);
+  if (!attachment) {
+    throw new NotFoundError("Attachment");
+  }
+  
+  try {
+    if (attachment.public_id) {
+      // Cloudinary attachment
+      const downloadUrl = cloudinary.url(attachment.public_id, {
+        secure: true,
+        resource_type: 'raw',
+        flags: 'attachment',
+        attachment: attachment.originalname,
+        sign_url: true
+      });
+      
+      return res.redirect(downloadUrl);
+    } else if (attachment.url) {
+      // Direct URL
+      const response = await fetch(attachment.url);
+      const buffer = await response.buffer();
+      
+      res.set({
+        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${attachment.originalname}"`,
+        'Content-Length': buffer.length
+      });
+      
+      return res.send(buffer);
+    } else {
+      throw new BadRequestError("No valid attachment URL found");
+    }
+    
+  } catch (error) {
+    console.error("Download error:", error);
+    
+    // Fallback
+    if (attachment.url) {
+      return res.redirect(attachment.url);
+    }
+    
+    throw new BadRequestError("Failed to generate download link");
+  }
 });
