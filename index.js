@@ -7,6 +7,9 @@ const cookieParser = require("cookie-parser");
 const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
 const CronJobs = require('./cronjobs');
+const path = require("path");
+const path = require("path");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +29,12 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api', require('./routes/allRoutes'));
 app.use('/api/web', require('./routes/webRoutesMount'));
+
+app.use(express.static(path.join(__dirname, 'frontend-antigravity', 'dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend-antigravity', 'dist', 'index.html'));
+});
 
 app.all("*", (req, res, next) => {
   const { ExpressError } = require("./utils/ExpressError");
