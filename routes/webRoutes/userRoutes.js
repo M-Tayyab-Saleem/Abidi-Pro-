@@ -5,6 +5,7 @@ const { userProfileStorage } = require("../../storageConfig");
 const upload = multer({ storage: userProfileStorage });
 const catchAsync = require("../../utils/catchAsync");
 const userController = require("../../controllers/userController");
+const { isLoggedIn } = require("../../middlewares/authMiddleware");
 
 // User Routes
 router
@@ -15,6 +16,7 @@ router
 router.get("/admins", userController.getAdminUsers);
 
 router.get('/birthdays/upcoming', userController.getUpcomingBirthdays);
+router.get("/org-chart", isLoggedIn, userController.getOrgChart);
 
 router
   .route("/search")

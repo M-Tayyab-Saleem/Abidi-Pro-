@@ -5,45 +5,48 @@ const userSchema = new mongoose.Schema(
     azureId: {
       type: String,
       unique: true,
-      required: true,
-      index: true 
+      sparse: true,
     },
     email: {
       type: String,
       required: true,
       unique: true,
     },
+    password: {
+      type: String,
+      select: false, 
+    },
     name: {
       type: String,
       required: true,
     },
-        role: {
+    role: {
       type: String,
-      enum: ["SuperAdmin", "Admin", "HR", "Manager", "Employee"], 
+      enum: ["SuperAdmin", "Admin", "HR", "Manager", "Employee"],
       required: true,
-      default: "Employee"
+      default: "Employee",
     },
     department: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Department',
-      default: null // Made optional for JIT provisioning
+      ref: "Department",
+      default: null,
     },
     reportsTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
-      default: null
+      ref: "User",
+      default: null,
     },
     jobLevel: {
       type: Number,
-      default: 5 
+      default: 5,
     },
     designation: {
       type: String,
-      default: "New Hire" // Default for JIT
+      default: "New Hire",
     },
     branch: {
       type: String,
-      default: "Main"
+      default: "Main",
     },
     empType: {
       type: String,
@@ -52,8 +55,7 @@ const userSchema = new mongoose.Schema(
     },
     empID: {
       type: String,
-      // Removed required/unique constraint temporarily if JIT creates users without EMP IDs immediately
-      default: "TBD" 
+      default: "TBD",
     },
     empStatus: {
       type: String,
@@ -62,71 +64,90 @@ const userSchema = new mongoose.Schema(
     },
     timeZone: {
       type: String,
-      default: "UTC"
+      default: "UTC",
     },
     avatar: {
       type: String,
-      default: ""
+      default: "",
     },
     joiningDate: { type: Date, default: Date.now },
     phoneNumber: {
-    type: String,
-    unique: true, 
-    sparse: true   
-},
+      type: String,
+      sparse: true, // Changed to sparse to avoid unique conflicts on null
+    },
     address: { type: String },
     salary: { type: Number },
     about: { type: String },
-    experience: [{
-      company: String,
-      jobType: String,
-      startDate: Date,
-      endDate: Date,
-      description: String,
-    }],
-    education: [{
-      institution: String,
-      degree: String,
-      startYear: Number,
-      endYear: Number,
-    }],
+    experience: [
+      {
+        company: String,
+        jobType: String,
+        startDate: Date,
+        endDate: Date,
+        description: String,
+      },
+    ],
+    education: [
+      {
+        institution: String,
+        degree: String,
+        startYear: Number,
+        endYear: Number,
+      },
+    ],
     DOB: { type: String },
     maritalStatus: { type: String },
-    emergencyContact: [{
-      name: String,
-      relation: String,
-      phone: Number,
-    }],
+    emergencyContact: [
+      {
+        name: String,
+        relation: String,
+        phone: Number,
+      },
+    ],
     addedby: { type: String },
-        avalaibleLeaves: { type: Number, default: 15 },
+    avalaibleLeaves: { type: Number, default: 15 },
     bookedLeaves: { type: Number, default: 0 },
-    leaveHistory: [{
-      leaveId: { type: mongoose.Schema.Types.ObjectId, ref: "LeaveRequest" },
-      leaveType: String,
-      startDate: Date,
-      endDate: Date,
-      status: String,
-      daysTaken: Number,
-      reason: String,
-    }],
+    leaveHistory: [
+      {
+        leaveId: { type: mongoose.Schema.Types.ObjectId, ref: "LeaveRequest" },
+        leaveType: String,
+        startDate: Date,
+        endDate: Date,
+        status: String,
+        daysTaken: Number,
+        reason: String,
+      },
+    ],
     leaves: {
       pto: { type: Number, default: 10 },
-      sick: { type: Number, default: 5 }
+      sick: { type: Number, default: 5 },
     },
-    dashboardCards: [{
-      type: {
-        type: String,
-        enum: ["feeds", "attendance", "holidays", "todo", "notes", "recent activities",
-          "birthdays", "leavelog", "upcomingDeadlines", "timeoffBalance", "tasksAssignedToMe"]
+    dashboardCards: [
+      {
+        type: {
+          type: String,
+          enum: [
+            "feeds",
+            "attendance",
+            "holidays",
+            "todo",
+            "notes",
+            "recent activities",
+            "birthdays",
+            "leavelog",
+            "upcomingDeadlines",
+            "timeoffBalance",
+            "tasksAssignedToMe",
+          ],
+        },
+        id: { type: String },
       },
-      id: { type: String }
-    }]
+    ],
   },
   {
     timestamps: true,
   }
 );
-
 
 userSchema.pre("findOneAndDelete", async function (next) {
   const user = await this.model.findOne(this.getFilter());
@@ -137,40 +158,29 @@ userSchema.pre("findOneAndDelete", async function (next) {
   // Clean dependent collections
   await Promise.all([
     mongoose.model("Ticket").deleteMany({
-      $or: [{ closedBy: userId }, { assignedTo: userId }]
+      $or: [{ closedBy: userId }, { assignedTo: userId }],
     }),
-
     mongoose.model("LeaveRequest").deleteMany({ employee: userId }),
-
     mongoose.model("TimeLog").deleteMany({ employee: userId }),
-
     mongoose.model("Timesheet").deleteMany({ employee: userId }),
-
     mongoose.model("TimeTracker").deleteMany({ user: userId }),
 
-    // Remove user from departments
     mongoose.model("Department").updateMany(
       {},
       {
-        $pull: {
-          members: userId
-        },
-        $set: {
-          manager: null
-        }
+        $pull: { members: userId },
+        $set: { manager: null },
       }
     ),
 
-    // Fix reporting hierarchy
     mongoose.model("User").updateMany(
       { reportsTo: userId },
       { $set: { reportsTo: null } }
-    )
+    ),
   ]);
 
   next();
 });
-
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 module.exports = User;

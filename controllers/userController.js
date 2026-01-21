@@ -1,39 +1,35 @@
 const User = require("../models/userSchema");
 const Department = require("../models/departemt"); // Make sure this model exists
-const bcrypt = require("bcryptjs");
 const catchAsync = require("../utils/catchAsync");
 const { BadRequestError, NotFoundError } = require("../utils/ExpressError");
+const { sendInvitationEmail } = require("../config/emailConfig");
+
+const generateEmpID = async () => {
+  const lastUser = await User.findOne({}, { empID: 1 }).sort({ createdAt: -1 });
+
+  if (!lastUser || !lastUser.empID || !lastUser.empID.startsWith("EMP-")) {
+    return "EMP-001";
+  }
+
+  const lastIdStr = lastUser.empID.split("-")[1];
+  const lastIdNum = parseInt(lastIdStr, 10);
+
+  if (isNaN(lastIdNum)) return "EMP-001";
+
+  return `EMP-${String(lastIdNum + 1).padStart(3, "0")}`;
+};
 
 // 1. Create User
 exports.createUser = catchAsync(async (req, res) => {
   const {
-    name, email, timeZone, reportsTo, password, empID, role,
-    phoneNumber, designation, department, branch, empType, joiningDate,
-    about, salary, education, address, experience, DOB,
-    maritalStatus, emergencyContact, addedby
-  } = req.body;
-
-  // 1. Check if email exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new BadRequestError("User with this email already exists");
-  }
-
-  // 2. Hash Password
-  const hashedPassword = await bcrypt.hash(password, 12);
-
-  // 3. Create User Instance
-  const newUser = new User({
     name,
     email,
     timeZone,
-    reportsTo: reportsTo || null, // Handle empty string from frontend
-    password: hashedPassword,
-    empID,
+    reportsTo,
     role,
     phoneNumber,
-    designation, 
-    department,  // This should be an ObjectId
+    designation,
+    department,
     branch,
     empType,
     joiningDate,
@@ -45,22 +41,69 @@ exports.createUser = catchAsync(async (req, res) => {
     DOB,
     maritalStatus,
     emergencyContact,
-    addedby
+    addedby,
+  } = req.body;
+
+  // 1. Check if email exists
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new BadRequestError("User with this email already exists");
+  }
+
+  const newEmpID = await generateEmpID();
+
+
+  const newUser = new User({
+    name,
+    email,
+    timeZone: timeZone || "UTC",
+    reportsTo: reportsTo || null,
+    empID: newEmpID,
+    role,
+    phoneNumber,
+    designation,
+    department,
+    branch,
+    empType,
+    joiningDate,
+    about,
+    salary,
+    education,
+    address,
+    experience,
+    DOB,
+    maritalStatus,
+    emergencyContact,
+    addedby,
   });
 
-  // 4. Save User
+  // 3. Save User
   const savedUser = await newUser.save();
 
-  // 5. AUTO-LINK: Add this User to the Department's "members" array
+  // 4. AUTO-LINK: Add this User to the Department's "members" array
   if (department) {
     await Department.findByIdAndUpdate(department, {
-      $push: { members: savedUser._id }
+      $push: { members: savedUser._id },
     });
   }
 
-  res.status(201).json(savedUser);
-});
+  // 5. Send Invitation Email
+  // Replace with your actual frontend URL
+  const frontendLoginUrl = process.env.FRONTEND_URL || "http://localhost:3000/auth/login"; 
+  
+  await sendInvitationEmail({
+    to: savedUser.email,
+    name: savedUser.name,
+    role: savedUser.role,
+    loginURL: frontendLoginUrl
+  });
 
+  res.status(201).json({
+    status: "success",
+    message: "User created and invitation email sent.",
+    data: savedUser,
+  });
+});
 // 2. Get All Users
 exports.getAllUsers = catchAsync(async (req, res) => {
   // Populate Department name and Manager name for the UI
@@ -135,18 +178,31 @@ exports.updateUser = catchAsync(async (req, res) => {
 // 5. Delete User
 exports.deleteUser = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const user = await User.findByIdAndDelete(id);
-
+  
+  // Find user first to check if exists
+  const user = await User.findById(id);
   if (!user) throw new NotFoundError("User not found");
 
-  // Cleanup: Remove user from their department
+  // Cleanup: Remove user from their department before deleting
   if (user.department) {
     await Department.findByIdAndUpdate(user.department, {
       $pull: { members: id }
     });
   }
 
-  res.status(200).json({ message: "User deleted successfully" });
+  // Remove user from any manager's reportsTo relationships
+  await User.updateMany(
+    { reportsTo: id },
+    { $set: { reportsTo: null } }
+  );
+
+  // Use findOneAndDelete to trigger the pre hook
+  await User.findOneAndDelete({ _id: id });
+
+  res.status(200).json({ 
+    status: "success",
+    message: "User deleted successfully" 
+  });
 });
 
 // --- ADMIN / UTILS ---
@@ -302,5 +358,39 @@ exports.uploadAvatar = catchAsync(async (req, res) => {
   res.status(200).json({
     status: 'success',
     avatarUrl: user.avatar
+  });
+});
+
+exports.getOrgChart = catchAsync(async (req, res, next) => {
+  // 1. Fetch all active users with necessary fields
+  const users = await User.find({ empStatus: "Active" })
+    .select("name designation avatar role email phone reportsTo department")
+    .populate("department", "name")
+    .lean();
+
+  // 2. Helper to build the tree recursively
+  const buildTree = (users, managerId = null) => {
+    return users
+      .filter((user) => {
+        // If managerId is null, we are looking for root nodes (CEO)
+        // Check if reportsTo is null OR if reportsTo doesn't exist in our list (orphan handling)
+        if (managerId === null) {
+            return !user.reportsTo; 
+        }
+        return user.reportsTo && user.reportsTo.toString() === managerId.toString();
+      })
+      .map((user) => ({
+        ...user,
+        // Recursively find children for this user
+        children: buildTree(users, user._id) 
+      }));
+  };
+
+  // 3. Build the hierarchy starting from roots (users with no manager)
+  const hierarchy = buildTree(users, null);
+
+  res.status(200).json({
+    status: "success",
+    data: hierarchy
   });
 });
