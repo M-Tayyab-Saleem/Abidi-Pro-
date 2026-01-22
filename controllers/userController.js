@@ -89,8 +89,8 @@ exports.createUser = catchAsync(async (req, res) => {
 
   // 5. Send Invitation Email
   // Replace with your actual frontend URL
-  const frontendLoginUrl = process.env.FRONTEND_URL || "http://localhost:3000/auth/login"; 
-  
+  const frontendLoginUrl = process.env.FRONTEND_URL || "http://localhost:3000/auth/login";
+
   await sendInvitationEmail({
     to: savedUser.email,
     name: savedUser.name,
@@ -140,7 +140,12 @@ exports.getUserById = catchAsync(async (req, res) => {
 exports.updateUser = catchAsync(async (req, res) => {
   const { id } = req.params;
   const updates = { ...req.body };
-  
+
+  // Fix: Handle empty/invalid reportsTo value to avoid CastError
+  if (updates.reportsTo === "" || updates.reportsTo === "NO MANAGER") {
+    updates.reportsTo = null;
+  }
+
   // Find original user to check for department changes
   const user = await User.findById(id);
   if (!user) throw new NotFoundError("User not found");
@@ -188,7 +193,7 @@ exports.updateUser = catchAsync(async (req, res) => {
 // 5. Delete User
 exports.deleteUser = catchAsync(async (req, res) => {
   const { id } = req.params;
-  
+
   // Find user first to check if exists
   const user = await User.findById(id);
   if (!user) throw new NotFoundError("User not found");
@@ -209,9 +214,9 @@ exports.deleteUser = catchAsync(async (req, res) => {
   // Use findOneAndDelete to trigger the pre hook
   await User.findOneAndDelete({ _id: id });
 
-  res.status(200).json({ 
+  res.status(200).json({
     status: "success",
-    message: "User deleted successfully" 
+    message: "User deleted successfully"
   });
 });
 
@@ -232,19 +237,19 @@ exports.getDashboardCards = catchAsync(async (req, res) => {
 exports.addDashboardCard = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { type } = req.body;
-  
+
   const user = await User.findById(id);
   if (!user) throw new NotFoundError("User");
-  
+
   if (user.dashboardCards.some(card => card.type === type)) {
     throw new BadRequestError("Card already exists");
   }
-  
+
   user.dashboardCards.push({
     type,
     id: Date.now().toString()
   });
-  
+
   await user.save();
   res.status(201).json(user.dashboardCards);
 });
@@ -253,14 +258,14 @@ exports.removeDashboardCard = catchAsync(async (req, res) => {
   const { id, cardId } = req.params;
   const user = await User.findById(id);
   if (!user) throw new NotFoundError("User");
-  
+
   const initialLength = user.dashboardCards.length;
   user.dashboardCards = user.dashboardCards.filter(card => card.id !== cardId);
-  
+
   if (user.dashboardCards.length === initialLength) {
     throw new NotFoundError("Card not found");
   }
-  
+
   await user.save();
   res.status(200).json(user.dashboardCards);
 });
@@ -275,23 +280,23 @@ exports.getUserLeaves = catchAsync(async (req, res) => {
 exports.updateUserLeaves = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { paid, sick, majlis, casual, earned } = req.body;
-  
+
   const user = await User.findById(id);
   if (!user) throw new NotFoundError("User");
-  
+
   if (paid !== undefined) user.leaves.paid = paid;
   if (sick !== undefined) user.leaves.sick = sick;
   if (majlis !== undefined) user.leaves.majlis = majlis;
   if (casual !== undefined) user.leaves.casual = casual;
   if (earned !== undefined) user.leaves.earned = earned;
-  
+
   await user.save();
   res.status(200).json(user.leaves);
 });
 
 exports.getUpcomingBirthdays = catchAsync(async (req, res) => {
   const today = new Date();
-  const currentMonth = today.getMonth() + 1; 
+  const currentMonth = today.getMonth() + 1;
   const currentDay = today.getDate();
 
   const users = await User.aggregate([
@@ -299,7 +304,7 @@ exports.getUpcomingBirthdays = catchAsync(async (req, res) => {
       $project: {
         name: 1,
         DOB: 1,
-        avatar: 1, 
+        avatar: 1,
         birthMonth: { $month: { $toDate: "$DOB" } },
         birthDay: { $dayOfMonth: { $toDate: "$DOB" } },
         daysUntilBirthday: {
@@ -385,14 +390,14 @@ exports.getOrgChart = catchAsync(async (req, res, next) => {
         // If managerId is null, we are looking for root nodes (CEO)
         // Check if reportsTo is null OR if reportsTo doesn't exist in our list (orphan handling)
         if (managerId === null) {
-            return !user.reportsTo; 
+          return !user.reportsTo;
         }
         return user.reportsTo && user.reportsTo.toString() === managerId.toString();
       })
       .map((user) => ({
         ...user,
         // Recursively find children for this user
-        children: buildTree(users, user._id) 
+        children: buildTree(users, user._id)
       }));
   };
 
