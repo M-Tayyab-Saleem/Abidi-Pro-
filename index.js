@@ -8,8 +8,6 @@ const refreshTokenMiddleware = require('./middlewares/refreshTokenMiddleware');
 const globalErrorHandler = require('./middlewares/globalErrorHandler');
 const CronJobs = require('./cronjobs');
 const path = require("path");
-const path = require("path");
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
