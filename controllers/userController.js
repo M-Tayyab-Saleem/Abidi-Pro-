@@ -118,8 +118,18 @@ exports.getAllUsers = catchAsync(async (req, res) => {
 exports.getUserById = catchAsync(async (req, res) => {
   const { id } = req.params;
   const user = await User.findById(id)
-    .populate("department", "name")
-    .populate("reportsTo", "name designation");
+    .populate({
+      path: "department",
+      populate: {
+        path: "members",
+        model: "User",
+        select: "name email designation avatar role empStatus"
+      }
+    })
+    .populate({
+      path: "reportsTo",
+      select: "name email designation avatar role"
+    });
 
   if (!user) throw new NotFoundError("User not found");
 

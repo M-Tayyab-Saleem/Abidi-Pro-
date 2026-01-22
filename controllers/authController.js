@@ -6,7 +6,6 @@ exports.getCurrentUser = async (req, res) => {
     throw new UnauthorizedError("User context missing");
   }
 
-  // Fetch full details from DB to ensure latest data
 const user = await User.findById(req.user.id)
   .populate({
     path: "department",
@@ -20,7 +19,7 @@ const user = await User.findById(req.user.id)
     path: "reportsTo",
     select: "name email designation avatar role"
   });
-  console.log("Fetched user for getCurrentUser:", user);  
+
   if (!user) {
     throw new UnauthorizedError("User record not found");
   }
